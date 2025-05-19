@@ -1,0 +1,277 @@
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/19/2025 16:17:44 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.2.7.0
+OBJECT MODULE PLACED IN .\Objects\ProjetoEmAsm.obj
+ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE ProjetoEmAsm.a51 SET(SMALL) DEBUG PRINT(.\Listings\ProjetoEmAsm.lst) OB
+                      JECT(.\Objects\ProjetoEmAsm.obj) EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;-----------------------------------------------
+                       2     ; Parque de Estacionamento 8051 — Assembly (R0–R7)
+                       3     ; Usando apenas registradores para variáveis
+                       4     ; Sem lógica de sensor integrado (retornado ao estado anterior)
+                       5     ; Correções MOV Rn,#immediate substituídas
+                       6     ;-----------------------------------------------
+                       7     
+                       8     ; Constantes de temporização
+  00C8                 9     FIM_TEMPO       EQU 200        ; 200 µs por overflow
+  00C3                10     MAX_CONTA_ALTO  EQU 195        ; 195×256×200 µs ≈ 10 s
+  0014                11     PISCA_INTERVALO EQU 20         ; 20×256×200 µs ≈ 1 s
+  01F4                12     ATUALIZA_OVF    EQU 500        ; 500×200 µs = 100 ms
+                      13     
+                      14     ; Mapeamento de pinos
+  0093                15     barreira        EQU P1.3      ; Barreira (servo)
+  0092                16     ledAmarelo      EQU P1.2      ; LED amarelo
+  0094                17     sensorOptico    EQU P1.4      ; Sensor ótico (não usado neste código)
+  00B2                18     botaoEntrada    EQU P3.2      ; INT0
+  00B3                19     botaoSaida      EQU P3.3      ; INT1
+  0090                20     ledVerde        EQU P1.0      ; LED verde
+  0091                21     ledVermelho     EQU P1.1      ; LED vermelho
+                      22     
+                      23     ; Variáveis em registradores
+                      24     ; R0 = contaBaixo     ; ticks de 200 µs
+                      25     ; R1 = contaAlto      ; 10 s e piscar
+                      26     ; R2 = flagTempo10s   ; sinaliza fim de 10 s
+                      27     ; R3 = flagPiscar     ; habilita piscar LED amarelo
+                      28     ; R4 = contaUpdLow    ; ticks de 200 µs para atualização
+                      29     ; R5 = contaUpdHigh   ; 100 ms de atualização
+                      30     ; R6 = flagAtualizar  ; sinaliza MAIN atualizar display
+                      31     ; R7 = uso temporário para contagem de bits
+                      32     ; B  = acumulador de vagas livres
+                      33     
+                      34     ; Vetores de interrupção
+0000                  35         ORG 0000H
+0000 020050           36         LJMP main
+                      37     
+0003                  38         ORG 0003H       ; INT0 (botão Entrada)
+0003 02004B           39         LJMP Botao_ISR
+                      40     
+000B                  41         ORG 000Bh       ; Timer0
+000B 02005B           42         LJMP Timer0_ISR
+                      43     
+0013                  44         ORG 0013H       ; INT1 (botão Saída)
+0013 02004B           45         LJMP Botao_ISR
+                      46     
+                      47     ;----------------------------
+                      48     ; Inicialização
+                      49     ;----------------------------
+0030                  50         ORG 0030H
+0030                  51     Init:
+0030 D2AF             52         SETB   EA          ; habilita interrupções globais
+0032 D2A8             53         SETB   EX0         ; habilita INT0 (falling edge)
+0034 D2AA             54         SETB   EX1         ; habilita INT1 (falling edge)
+0036 D2A9             55         SETB   ET0         ; habilita Timer0
+                      56     
+0038 5389F0           57         ANL    TMOD, #0F0h ; limpa configurações de Timer0
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/19/2025 16:17:44 PAGE     2
+
+003B 438902           58         ORL    TMOD, #02h  ; modo 2 (auto-reload)
+                      59     
+003E 758C38           60         MOV    TH0, #038h  ; recarga ≈200 µs
+0041 758A38           61         MOV    TL0, #038h
+                      62     
+0044 D28C             63         SETB   TR0         ; inicia Timer0
+0046 D288             64         SETB   IT0         ; INT0 na borda de descida
+0048 D28A             65         SETB   IT1         ; INT1 na borda de descida
+                      66     
+004A 22               67         RET
+                      68     
+                      69     ;----------------------------
+                      70     ; ISR comum: Botão Entrada/Saída
+                      71     ; Levanta barreira, liga amarelo e reinicia temporizações
+                      72     ;----------------------------
+004B                  73     Botao_ISR:
+004B D293             74         SETB   barreira         ; abre barreira
+004D D292             75         SETB   ledAmarelo       ; acende amarelo
+                      76         ; reseta flags e contadores via A
+004F 7400             77         MOV    A, #0
+0051 FA               78         MOV    R2, A           ; reseta flagTempo10s
+0052 FE               79         MOV    R6, A           ; reseta flagAtualizar
+0053 F8               80         MOV    R0, A           ; reseta contaBaixo
+0054 F9               81         MOV    R1, A           ; reseta contaAlto
+0055 FC               82         MOV    R4, A           ; reseta contaUpdLow
+0056 FD               83         MOV    R5, A           ; reseta contaUpdHigh
+0057 7401             84         MOV    A, #1
+0059 FB               85         MOV    R3, A           ; habilita piscar amarelo
+005A 32               86         RETI
+                      87     
+                      88     ;----------------------------
+                      89     ; ISR Timer0: Ticks de 200 µs
+                      90     ; - Contagem 10 s + piscar
+                      91     ; - Contagem 100 ms para atualização
+                      92     ;----------------------------
+005B                  93     Timer0_ISR:
+                      94         ; ===== 10 s + piscar =====
+005B 08               95         INC    R0
+005C E8               96         MOV    A, R0
+005D B40001           97         CJNE   A, #0, SkipHigh
+0060 09               98         INC    R1               ; overflow do contador baixo
+0061                  99     SkipHigh:
+                     100         ; piscar amarelo
+0061 EB              101         MOV    A, R3
+0062 B40109          102         CJNE   A, #1, SkipBlink
+0065 E9              103         MOV    A, R1
+0066 B41405          104         CJNE   A, #PISCA_INTERVALO, SkipBlink    
+0069 7400            105             MOV    A, #0
+006B F9              106         MOV    R1, A
+006C B292            107         CPL    ledAmarelo       ; inverte amarelo
+006E                 108     SkipBlink:
+006E E9              109         MOV    A, R1
+006F B4C309          110         CJNE   A, #MAX_CONTA_ALTO, SkipUpdate
+                     111         ; 10 s completos
+0072 7400            112         MOV    A, #0
+0074 F9              113         MOV    R1, A
+0075 7401            114         MOV    A, #1
+0077 FA              115         MOV    R2, A           ; marca flagTempo10s
+0078 7400            116         MOV    A, #0
+007A FB              117         MOV    R3, A           ; desabilita piscar
+                     118     
+                     119         ; ===== 100 ms atualização =====
+007B                 120     SkipUpdate:
+007B 0C              121         INC    R4
+007C EC              122         MOV    A, R4
+007D B4000C          123         CJNE   A, #0, EndISR
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/19/2025 16:17:44 PAGE     3
+
+0080 0D              124         INC    R5
+0081 ED              125         MOV    A, R5
+0082 B40107          126         CJNE   A, #1, EndISR
+                     127         ; 100 ms completos
+0085 7400            128         MOV    A, #0
+0087 FC              129         MOV    R4, A
+0088 FD              130         MOV    R5, A
+0089 7401            131         MOV    A, #1
+008B FE              132         MOV    R6, A           ; marca flagAtualizar
+                     133     
+008C                 134     EndISR:
+008C 32              135         RETI
+                     136     
+                     137     ;----------------------------
+                     138     ; Programa Principal
+                     139     ;----------------------------
+0050                 140         ORG 0050H
+0050                 141     main:
+0050 758107          142         MOV    SP, #07h
+                     143         ; zera R0-R7
+0053 7400            144         MOV    A, #0
+0055 F8              145         MOV    R0, A
+0056 F9              146         MOV    R1, A
+0057 FA              147         MOV    R2, A
+0058 FB              148         MOV    R3, A
+0059 FC              149         MOV    R4, A
+005A FD              150         MOV    R5, A
+005B FE              151         MOV    R6, A
+005C FF              152         MOV    R7, A
+005D 1130            153         CALL   Init
+                     154     
+005F                 155     LoopPrincipal:
+005F EA              156         MOV    A, R2
+0060 B40107          157         CJNE   A, #1, CheckUpdate
+0063 C293            158         CLR    barreira         ; fecha barreira após 10 s
+0065 C292            159         CLR    ledAmarelo       ; apaga amarelo
+0067 7400            160         MOV    A, #0
+0069 FA              161         MOV    R2, A            ; limpa flagTempo10s
+                     162     
+006A                 163     CheckUpdate:
+006A EE              164         MOV    A, R6
+006B B4012D          165         CJNE   A, #1, LoopEnd
+                     166     
+                     167         ; --- Atualização de sensores e display ---
+006E 7580FF          168         MOV    P0, #0FFh       ; configura P0 como entrada
+0071 E580            169         MOV    A, P0            ; lê sensores S1-S8
+0073 F4              170         CPL    A                ; prepara LEDs de lugar
+0074 F580            171         MOV    P0, A            ; acende L1-L8
+                     172     
+                     173         ; conta lugares livres em B
+0076 7400            174         MOV    A, #0
+0078 F5F0            175         MOV    B, A             ; zera B
+007A 7F08            176         MOV    R7, #8           ; loop 8 bits
+007C                 177     CountLoop:
+007C 23              178         RL     A
+007D 5002            179         JNC    NoInc
+007F 05F0            180         INC    B
+0081                 181     NoInc:
+0081 DFF9            182         DJNZ   R7, CountLoop
+                     183     
+                     184         ; exibe B (0-8) no display BCD em P2
+0083 E5F0            185         MOV    A, B
+0085 540F            186         ANL    A, #0Fh
+0087 F5A0            187         MOV    P2, A
+                     188     
+                     189         ; LED verde/vermelho
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/19/2025 16:17:44 PAGE     4
+
+0089 E5F0            190         MOV    A, B
+008B B40006          191         CJNE   A, #0, ParkOK
+008E C290            192         CLR    ledVerde
+0090 D291            193         SETB   ledVermelho
+0092 8004            194         SJMP   AfterUpd
+0094                 195     ParkOK:
+0094 D290            196         SETB   ledVerde
+0096 C291            197         CLR    ledVermelho
+0098                 198     AfterUpd:
+0098 7400            199         MOV    A, #0
+009A FE              200         MOV    R6, A           ; limpa flagAtualizar
+                     201     
+009B                 202     LoopEnd:
+009B 80C2            203         SJMP   LoopPrincipal
+                     204     
+                     205     END
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/19/2025 16:17:44 PAGE     5
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E             T Y P E  V A L U E   ATTRIBUTES
+
+AFTERUPD . . . . .  C ADDR   0098H   A   
+ATUALIZA_OVF . . .  N NUMB   01F4H   A   
+B. . . . . . . . .  D ADDR   00F0H   A   
+BARREIRA . . . . .  B ADDR   0090H.3 A   
+BOTAOENTRADA . . .  B ADDR   00B0H.2 A   
+BOTAOSAIDA . . . .  B ADDR   00B0H.3 A   
+BOTAO_ISR. . . . .  C ADDR   004BH   A   
+CHECKUPDATE. . . .  C ADDR   006AH   A   
+COUNTLOOP. . . . .  C ADDR   007CH   A   
+EA . . . . . . . .  B ADDR   00A8H.7 A   
+ENDISR . . . . . .  C ADDR   008CH   A   
+ET0. . . . . . . .  B ADDR   00A8H.1 A   
+EX0. . . . . . . .  B ADDR   00A8H.0 A   
+EX1. . . . . . . .  B ADDR   00A8H.2 A   
+FIM_TEMPO. . . . .  N NUMB   00C8H   A   
+INIT . . . . . . .  C ADDR   0030H   A   
+IT0. . . . . . . .  B ADDR   0088H.0 A   
+IT1. . . . . . . .  B ADDR   0088H.2 A   
+LEDAMARELO . . . .  B ADDR   0090H.2 A   
+LEDVERDE . . . . .  B ADDR   0090H.0 A   
+LEDVERMELHO. . . .  B ADDR   0090H.1 A   
+LOOPEND. . . . . .  C ADDR   009BH   A   
+LOOPPRINCIPAL. . .  C ADDR   005FH   A   
+MAIN . . . . . . .  C ADDR   0050H   A   
+MAX_CONTA_ALTO . .  N NUMB   00C3H   A   
+NOINC. . . . . . .  C ADDR   0081H   A   
+P0 . . . . . . . .  D ADDR   0080H   A   
+P1 . . . . . . . .  D ADDR   0090H   A   
+P2 . . . . . . . .  D ADDR   00A0H   A   
+P3 . . . . . . . .  D ADDR   00B0H   A   
+PARKOK . . . . . .  C ADDR   0094H   A   
+PISCA_INTERVALO. .  N NUMB   0014H   A   
+SENSOROPTICO . . .  B ADDR   0090H.4 A   
+SKIPBLINK. . . . .  C ADDR   006EH   A   
+SKIPHIGH . . . . .  C ADDR   0061H   A   
+SKIPUPDATE . . . .  C ADDR   007BH   A   
+SP . . . . . . . .  D ADDR   0081H   A   
+TH0. . . . . . . .  D ADDR   008CH   A   
+TIMER0_ISR . . . .  C ADDR   005BH   A   
+TL0. . . . . . . .  D ADDR   008AH   A   
+TMOD . . . . . . .  D ADDR   0089H   A   
+TR0. . . . . . . .  B ADDR   0088H.4 A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
