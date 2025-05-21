@@ -1,15 +1,21 @@
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                    05/19/2025  16:17:45  PAGE 1
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                    05/21/2025  04:32:23  PAGE 1
 
 
 BL51 BANKED LINKER/LOCATER V6.22.4.0, INVOKED BY:
-C:\KEIL_V5\C51\BIN\BL51.EXE .\Objects\ProjetoEmAsm.obj TO .\Objects\3Projeto_Asm PRINT (.\Listings\3Projeto_Asm.m51)
+C:\KEIL_V5\C51\BIN\BL51.EXE .\Objects\ProjetoEmC.obj TO .\Objects\3Projeto_Asm PRINT (.\Listings\3Projeto_Asm.m51)
+
+
+MEMORY MODEL: SMALL
 
 
 INPUT MODULES INCLUDED:
-  .\Objects\ProjetoEmAsm.obj (PROJETOEMASM)
+  .\Objects\ProjetoEmC.obj (PROJETOEMC)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_STARTUP)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C?SLCMP)
+  C:\KEIL_V5\C51\LIB\C51S.LIB (?C_INIT)
 
 
-LINK MAP OF MODULE:  .\Objects\3Projeto_Asm (PROJETOEMASM)
+LINK MAP OF MODULE:  .\Objects\3Projeto_Asm (PROJETOEMC)
 
 
             TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
@@ -17,176 +23,182 @@ LINK MAP OF MODULE:  .\Objects\3Projeto_Asm (PROJETOEMASM)
 
             * * * * * * *   D A T A   M E M O R Y   * * * * * * *
             REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            DATA    0008H     0006H     UNIT         ?DT?PROJETOEMC
+                    000EH     0012H                  *** GAP ***
+            BIT     0020H.0   0000H.3   UNIT         ?BI?PROJETOEMC
+                    0020H.3   0000H.5                *** GAP ***
+            IDATA   0021H     0001H     UNIT         ?STACK
 
             * * * * * * *   C O D E   M E M O R Y   * * * * * * *
-            CODE    0000H     009DH     ABSOLUTE     
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     0003H     ABSOLUTE     
+                    0006H     0005H                  *** GAP ***
+            CODE    000BH     0003H     ABSOLUTE     
+                    000EH     0005H                  *** GAP ***
+            CODE    0013H     0003H     ABSOLUTE     
+                    0016H     07EAH                  *** GAP ***
+            CODE    0800H     009DH     UNIT         ?PR?MAIN?PROJETOEMC
+            CODE    089DH     008CH     UNIT         ?C_C51STARTUP
+            CODE    0929H     0024H     UNIT         ?PR?INIT?PROJETOEMC
+            CODE    094DH     0016H     UNIT         ?C?LIB_CODE
+            CODE    0963H     0013H     UNIT         ?C_INITSEG
+            CODE    0976H     000DH     UNIT         ?PR?TIMER0_ISR?PROJETOEMC
+            CODE    0983H     0003H     UNIT         ?PR?EXTERNAL0_ISR?PROJETOEMC
+            CODE    0986H     0003H     UNIT         ?PR?EXTERNAL1_ISR?PROJETOEMC
+            CODE    0989H     0003H     UNIT         ?PR?LESENSOR?PROJETOEMC
+            CODE    098CH     0001H     UNIT         ?PR?DISPLAY?PROJETOEMC
 
 
 
-SYMBOL TABLE OF MODULE:  .\Objects\3Projeto_Asm (PROJETOEMASM)
+OVERLAY MAP OF MODULE:   .\Objects\3Projeto_Asm (PROJETOEMC)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?PROJETOEMC
+  +--> ?C_INITSEG
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  05/21/2025  04:32:23  PAGE 2
+
+
+
+?PR?MAIN?PROJETOEMC
+  +--> ?PR?INIT?PROJETOEMC
+  +--> ?PR?DISPLAY?PROJETOEMC
+  +--> ?PR?LESENSOR?PROJETOEMC
+
+
+
+SYMBOL TABLE OF MODULE:  .\Objects\3Projeto_Asm (PROJETOEMC)
 
   VALUE           TYPE          NAME
   ----------------------------------
 
-  -------         MODULE        PROJETOEMASM
-  C:0098H         SYMBOL        AFTERUPD
-  N:01F4H         SYMBOL        ATUALIZA_OVF
-  D:00F0H         SYMBOL        B
-  B:0090H.3       SYMBOL        BARREIRA
-  B:00B0H.2       SYMBOL        BOTAOENTRADA
-  B:00B0H.3       SYMBOL        BOTAOSAIDA
-  C:004BH         SYMBOL        BOTAO_ISR
-  C:006AH         SYMBOL        CHECKUPDATE
-  C:007CH         SYMBOL        COUNTLOOP
-  B:00A8H.7       SYMBOL        EA
-  C:008CH         SYMBOL        ENDISR
-  B:00A8H.1       SYMBOL        ET0
-  B:00A8H.0       SYMBOL        EX0
-  B:00A8H.2       SYMBOL        EX1
-  N:00C8H         SYMBOL        FIM_TEMPO
-  C:0030H         SYMBOL        INIT
-  B:0088H.0       SYMBOL        IT0
-  B:0088H.2       SYMBOL        IT1
-  B:0090H.2       SYMBOL        LEDAMARELO
-  B:0090H.0       SYMBOL        LEDVERDE
-  B:0090H.1       SYMBOL        LEDVERMELHO
-  C:009BH         SYMBOL        LOOPEND
-  C:005FH         SYMBOL        LOOPPRINCIPAL
-  C:0050H         SYMBOL        MAIN
-  N:00C3H         SYMBOL        MAX_CONTA_ALTO
-  C:0081H         SYMBOL        NOINC
-  D:0080H         SYMBOL        P0
-  D:0090H         SYMBOL        P1
-  D:00A0H         SYMBOL        P2
-  D:00B0H         SYMBOL        P3
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  05/19/2025  16:17:45  PAGE 2
+  -------         MODULE        PROJETOEMC
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  B:0090H.1       PUBLIC        ledVermelho
+  D:0080H         PUBLIC        P0
+  D:0090H         PUBLIC        P1
+  D:00A0H         PUBLIC        P2
+  C:0976H         PUBLIC        Timer0_ISR
+  B:00A8H.7       PUBLIC        EA
+  D:0008H         PUBLIC        Leds
+  C:0929H         PUBLIC        Init
+  D:000AH         PUBLIC        conta
+  B:0020H.0       PUBLIC        botao
+  B:0020H.1       PUBLIC        passouCarro
+  B:0090H.4       PUBLIC        sensor
+  C:0800H         PUBLIC        main
+  B:00A0H.0       PUBLIC        segmentoA
+  B:00A0H.1       PUBLIC        segmentoB
+  B:00A0H.2       PUBLIC        segmentoC
+  B:00A0H.3       PUBLIC        segmentoD
+  B:0090H.0       PUBLIC        ledVerde
+  D:0089H         PUBLIC        TMOD
+  B:0020H.2       PUBLIC        ledIntermitente
+  C:0983H         PUBLIC        External0_ISR
+  C:0986H         PUBLIC        External1_ISR
+  B:00A8H.1       PUBLIC        ET0
+  B:0090H.3       PUBLIC        barreira
+  B:00A8H.0       PUBLIC        EX0
+  B:0088H.0       PUBLIC        IT0
+  B:00A8H.2       PUBLIC        EX1
+  C:0989H         PUBLIC        leSensor
+  B:0088H.4       PUBLIC        TR0
+  D:000CH         PUBLIC        contaSegundo
+  C:098CH         PUBLIC        display
+  B:0090H.2       PUBLIC        ledAmarelo
+  -------         PROC          INIT
+  C:0929H         LINE#         28
+  C:0929H         LINE#         30
+  C:092BH         LINE#         31
+  C:092DH         LINE#         32
+  C:092FH         LINE#         33
+  C:0931H         LINE#         36
+  C:0934H         LINE#         37
+  C:0937H         LINE#         40
+  C:0939H         LINE#         41
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  05/21/2025  04:32:23  PAGE 3
 
 
-  C:0094H         SYMBOL        PARKOK
-  N:0014H         SYMBOL        PISCA_INTERVALO
-  B:0090H.4       SYMBOL        SENSOROPTICO
-  C:006EH         SYMBOL        SKIPBLINK
-  C:0061H         SYMBOL        SKIPHIGH
-  C:007BH         SYMBOL        SKIPUPDATE
-  D:0081H         SYMBOL        SP
-  D:008CH         SYMBOL        TH0
-  C:005BH         SYMBOL        TIMER0_ISR
-  D:008AH         SYMBOL        TL0
-  D:0089H         SYMBOL        TMOD
-  B:0088H.4       SYMBOL        TR0
-  C:0000H         LINE#         36
-  C:0003H         LINE#         39
-  C:000BH         LINE#         42
-  C:0013H         LINE#         45
-  C:0030H         LINE#         52
-  C:0032H         LINE#         53
-  C:0034H         LINE#         54
-  C:0036H         LINE#         55
-  C:0038H         LINE#         57
-  C:003BH         LINE#         58
-  C:003EH         LINE#         60
-  C:0041H         LINE#         61
-  C:0044H         LINE#         63
-  C:0046H         LINE#         64
-  C:0048H         LINE#         65
-  C:004AH         LINE#         67
-  C:004BH         LINE#         74
-  C:004DH         LINE#         75
-  C:004FH         LINE#         77
-  C:0051H         LINE#         78
-  C:0052H         LINE#         79
-  C:0053H         LINE#         80
-  C:0054H         LINE#         81
-  C:0055H         LINE#         82
-  C:0056H         LINE#         83
-  C:0057H         LINE#         84
-  C:0059H         LINE#         85
-  C:005AH         LINE#         86
-  C:005BH         LINE#         95
-  C:005CH         LINE#         96
-  C:005DH         LINE#         97
-  C:0060H         LINE#         98
-  C:0061H         LINE#         101
-  C:0062H         LINE#         102
-  C:0065H         LINE#         103
-  C:0066H         LINE#         104
-  C:0069H         LINE#         105
-  C:006BH         LINE#         106
-  C:006CH         LINE#         107
-  C:006EH         LINE#         109
-  C:006FH         LINE#         110
-  C:0072H         LINE#         112
-  C:0074H         LINE#         113
-  C:0075H         LINE#         114
-  C:0077H         LINE#         115
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  05/19/2025  16:17:45  PAGE 3
+  C:093BH         LINE#         43
+  C:093EH         LINE#         45
+  C:0940H         LINE#         46
+  C:0942H         LINE#         47
+  C:0944H         LINE#         50
+  C:0946H         LINE#         51
+  C:0948H         LINE#         52
+  C:094AH         LINE#         53
+  C:094CH         LINE#         54
+  -------         ENDPROC       INIT
+  -------         PROC          EXTERNAL0_ISR
+  C:0983H         LINE#         57
+  C:0983H         LINE#         58
+  C:0985H         LINE#         60
+  -------         ENDPROC       EXTERNAL0_ISR
+  -------         PROC          EXTERNAL1_ISR
+  C:0986H         LINE#         63
+  C:0986H         LINE#         64
+  C:0988H         LINE#         65
+  -------         ENDPROC       EXTERNAL1_ISR
+  -------         PROC          TIMER0_ISR
+  C:0976H         LINE#         68
+  C:0978H         LINE#         69
+  C:0980H         LINE#         70
+  -------         ENDPROC       TIMER0_ISR
+  -------         PROC          DISPLAY
+  C:098CH         LINE#         72
+  C:098CH         LINE#         74
+  -------         ENDPROC       DISPLAY
+  -------         PROC          LESENSOR
+  C:0989H         LINE#         76
+  C:0989H         LINE#         77
+  C:098BH         LINE#         78
+  -------         ENDPROC       LESENSOR
+  -------         PROC          MAIN
+  C:0800H         LINE#         80
+  C:0800H         LINE#         83
+  C:0803H         LINE#         84
+  C:0803H         LINE#         85
+  C:0806H         LINE#         86
+  C:0819H         LINE#         87
+  C:081DH         LINE#         88
+  C:0822H         LINE#         89
+  C:0831H         LINE#         90
+  C:0834H         LINE#         91
+  C:0836H         LINE#         92
+  C:0841H         LINE#         93
+  C:0844H         LINE#         94
+  C:0847H         LINE#         95
+  C:0849H         LINE#         96
+  C:086AH         LINE#         97
+  C:086CH         LINE#         99
+  C:086EH         LINE#         100
+  C:086EH         LINE#         101
+  C:0870H         LINE#         102
+  C:088FH         LINE#         103
+  C:0891H         LINE#         104
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  05/21/2025  04:32:23  PAGE 4
 
 
-  C:0078H         LINE#         116
-  C:007AH         LINE#         117
-  C:007BH         LINE#         121
-  C:007CH         LINE#         122
-  C:007DH         LINE#         123
-  C:0080H         LINE#         124
-  C:0081H         LINE#         125
-  C:0082H         LINE#         126
-  C:0085H         LINE#         128
-  C:0087H         LINE#         129
-  C:0088H         LINE#         130
-  C:0089H         LINE#         131
-  C:008BH         LINE#         132
-  C:008CH         LINE#         135
-  C:0050H         LINE#         142
-  C:0053H         LINE#         144
-  C:0055H         LINE#         145
-  C:0056H         LINE#         146
-  C:0057H         LINE#         147
-  C:0058H         LINE#         148
-  C:0059H         LINE#         149
-  C:005AH         LINE#         150
-  C:005BH         LINE#         151
-  C:005CH         LINE#         152
-  C:005DH         LINE#         153
-  C:005FH         LINE#         156
-  C:0060H         LINE#         157
-  C:0063H         LINE#         158
-  C:0065H         LINE#         159
-  C:0067H         LINE#         160
-  C:0069H         LINE#         161
-  C:006AH         LINE#         164
-  C:006BH         LINE#         165
-  C:006EH         LINE#         168
-  C:0071H         LINE#         169
-  C:0073H         LINE#         170
-  C:0074H         LINE#         171
-  C:0076H         LINE#         174
-  C:0078H         LINE#         175
-  C:007AH         LINE#         176
-  C:007CH         LINE#         178
-  C:007DH         LINE#         179
-  C:007FH         LINE#         180
-  C:0081H         LINE#         182
-  C:0083H         LINE#         185
-  C:0085H         LINE#         186
-  C:0087H         LINE#         187
-  C:0089H         LINE#         190
-  C:008BH         LINE#         191
-  C:008EH         LINE#         192
-  C:0090H         LINE#         193
-  C:0092H         LINE#         194
-  C:0094H         LINE#         196
-  C:0096H         LINE#         197
-  C:0098H         LINE#         199
-  C:009AH         LINE#         200
-  C:009BH         LINE#         203
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  05/19/2025  16:17:45  PAGE 4
+  C:0893H         LINE#         105
+  C:089AH         LINE#         107
+  C:089AH         LINE#         108
+  C:089AH         LINE#         109
+  C:089AH         LINE#         110
+  C:089AH         LINE#         111
+  C:089AH         LINE#         112
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        PROJETOEMC
 
-
-  -------         ENDMOD        PROJETOEMASM
+  -------         MODULE        ?C?SLCMP
+  C:094DH         PUBLIC        ?C?SLCMP
+  -------         ENDMOD        ?C?SLCMP
 
 ******************************************************************************
-* RESTRICTED VERSION WITH 0800H BYTE CODE SIZE LIMIT; USED: 00B6H BYTE ( 8%) *
+* RESTRICTED VERSION WITH 0800H BYTE CODE SIZE LIMIT; USED: 00F3H BYTE (11%) *
 ******************************************************************************
 
-Program Size: data=8.0 xdata=0 code=157
+Program Size: data=15.3 xdata=0 code=409
 LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

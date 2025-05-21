@@ -1,0 +1,142 @@
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/21/2025 04:32:23 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE PROJETOEMC
+OBJECT MODULE PLACED IN .\Objects\ProjetoEmC.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE ProjetoEmC.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listing
+                    -s\ProjetoEmC.lst) TABS(2) OBJECT(.\Objects\ProjetoEmC.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          
+   3          #define fimTempo 60000  // para so fazer operacoes de segundo a segundo
+   4          
+   5          //Pins P1
+   6          sbit ledVerde = P1^0; //pino do led verde
+   7          sbit ledVermelho = P1^1; //pino do led vermelho
+   8          sbit ledAmarelo = P1^2; //pino do led amarelo
+   9          sbit barreira = P1^3; //pino da barreira
+  10          sbit sensor = P1^4; //pino do sensor
+  11          
+  12          //Pins P2
+  13          sbit segmentoA = P2^0; //pino do servo A
+  14          sbit segmentoB = P2^1; //pino do servo B
+  15          sbit segmentoC = P2^2; //pino do servo C
+  16          sbit segmentoD = P2^3; //pino do servo D
+  17          
+  18          //constantes
+  19          bit botao = 0; //se o botao estiver a 0 entao e uma entrada se estiver a 1 e uma saida
+  20          bit passouCarro = 0; 
+  21          
+  22          bit ledIntermitente = 0; //vai mudando entre 0 e 1 a cada segundo
+  23          
+  24          unsigned int conta = 0; //para ajudar a contar 1 segundo
+  25          unsigned int contaSegundo = 0; //contador do timer a cada 1s
+  26          unsigned int Leds = 0; //variavel temporaria
+  27          
+  28          void Init(void){
+  29   1          //configuracao Registo IE
+  30   1          EA = 1; //habilita interrupcao global
+  31   1          ET0 = 1; //habilita interrupcao do timer 0
+  32   1          EX0 = 1; //habilita interrupcao externa 0
+  33   1          EX1 = 1; //habilita interrupcao externa 1
+  34   1      
+  35   1          //configuracao Registo TMOD
+  36   1          TMOD &= 0xF0; // limpa os 4 bits do timer 0 (8 bits -auto reload)
+  37   1          TMOD |= 0x02; //modo 2 do timer 0
+  38   1      
+  39   1          //configuracao Timer 0
+  40   1          TR0 = 1; //inicia o timer 0
+  41   1          IT0 = 1;//interrupcao esterna ativa a falling edge
+  42   1      
+  43   1          P0 = Leds;
+  44   1          
+  45   1          ledVerde = 0; //led verde ligado
+  46   1          ledVermelho = 1; //led vermelho desligado
+  47   1          ledAmarelo = 1; //led amarelo desligado
+  48   1      
+  49   1          //comecar com o display de 7 segmentos a 9
+  50   1          segmentoA = 0;
+  51   1          segmentoB = 0;
+  52   1          segmentoC = 0;
+  53   1          segmentoD = 1; 
+  54   1      }
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/21/2025 04:32:23 PAGE 2   
+
+  55          
+  56          //interrupcao externa 0
+  57          void External0_ISR(void) interrupt 0{
+  58   1          botao = 0; //assinala que o botao para entrar foi pressionado
+  59   1      
+  60   1      }
+  61          
+  62          //interrupcao externa 1
+  63          void External1_ISR(void) interrupt 2{
+  64   1          botao = 1; //assinala que o botao para sair foi pressionado
+  65   1      }
+  66          
+  67          //interrupcao tempo a cada segundo
+  68          void Timer0_ISR(void) interrupt 1{
+  69   1          conta ++;
+  70   1      }
+  71          
+  72          void display(void){
+  73   1      
+  74   1      }
+  75          
+  76          void leSensor(){
+  77   1          sensor = 1; //so para testar
+  78   1      }
+  79          
+  80          void main(void){
+  81   1          //inicializacoes
+  82   1      
+  83   1        Init();
+  84   1          while (1){ //loop inifinito
+  85   2              display();
+  86   2              if (conta == fimTempo){
+  87   3                  conta = 0; //volta a contar
+  88   3                  contaSegundo = 10; //passou 1 segundo
+  89   3                  if (segmentoA || segmentoB || segmentoC || segmentoD || botao){ //se tiver lugares ou se for p
+             -ara sair
+  90   4                      leSensor();
+  91   4                      barreira = 1;//levanta a barreira
+  92   4                      if (contaSegundo >= 10){//espera ate ser maior que 10 segundos 
+  93   5                          if (sensor){
+  94   6                              if (botao){//se for para entrar 
+  95   7                                  barreira = 0; //baixa a barreira 
+  96   7                                  Leds = (Leds >> 1) | (Leds << 7);//deslocar para a esquerda
+  97   7                                  P0 = Leds;  
+  98   7                                  //sensor = 0;//volta a colocar o sensor a 0
+  99   7                              }
+ 100   6                              else{//se for para sair    
+ 101   7                                barreira = 0; //baixa a barreira 
+ 102   7                                  Leds = (Leds << 1) | (Leds >> 7);//deslocar para a direita
+ 103   7                                  P0 = Leds;
+ 104   7                                  P0 = P0 + 1;
+ 105   7                                  Leds = P0; //atualiza os Leds
+ 106   7                                  //sensor = 0;//volta a colocar o sensor a 0
+ 107   7                              }
+ 108   6                          }
+ 109   5                      }
+ 110   4                  }
+ 111   3              }
+ 112   2          }
+ 113   1      }
+
+
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/21/2025 04:32:23 PAGE 3   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    216    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      6    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

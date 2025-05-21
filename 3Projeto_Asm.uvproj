@@ -377,9 +377,9 @@
           <GroupName>Source Group 1</GroupName>
           <Files>
             <File>
-              <FileName>ProjetoEmAsm.a51</FileName>
-              <FileType>2</FileType>
-              <FilePath>.\ProjetoEmAsm.a51</FilePath>
+              <FileName>ProjetoEmC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ProjetoEmC.c</FilePath>
             </File>
           </Files>
         </Group>
