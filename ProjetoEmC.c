@@ -1,9 +1,10 @@
 #include <reg51.h>
 
-#define fimTempo 4000  // para so fazer operacoes de segundo a segundo
-#define fimTempoBarreira 100 //so para adnar de 0.2 na barreira
-#define zero 3 
-#define oitenta 7
+//constantes
+#define fimTempo 4000  // 4000 *0.25ms = 1s
+#define fimTempoBarreira 100 // 100 * 0.25ms = 25ms
+#define zero 3 // 3*0.25ms = 0.75ms
+#define oitenta 7// 7*0.25ms = 1.75ms
 
 //Pins P0
 sbit L0 = P0^0;
@@ -28,11 +29,10 @@ sbit segmentoB = P2^1; //pino do servo B
 sbit segmentoC = P2^2; //pino do servo C
 sbit segmentoD = P2^3; //pino do servo D
 
-//constantes
+//variaveis globais
 bit botao = 0; //se o botao estiver a 0 entao e uma entrada se estiver a 1 e uma saida
 bit pressionado = 0; //para confirmar se o botao foi pressionado
 bit passouCarro = 0; //confirmar se passou o carro
-
 unsigned int conta = 0; //para ajudar a contar 1 segundo
 unsigned int contaSegundo = 0; //contador do timer a cada 1s
 unsigned int abreBarreira = 0; //para abrir a barreira
@@ -67,8 +67,8 @@ void Init(void){
     ledVermelho = 1; //led vermelho desligado
     ledAmarelo = 1; //led amarelo desligado
 	barreira = 0;//a barreira comeca para baixo
-	sensor = 1;//inicializa o sensor a 0
-		
+	sensor = 1;//inicializa o sensor a 1
+    
 
 }
 
@@ -109,9 +109,10 @@ void leSensor(){
 }
 
 void moveBarreira(void){
+    contaBarreira++;
     if (abreBarreira){
         referenciaBarreira = oitenta; //se o carro passou entao a barreira tem de ir para 80
-        contaBarreira++;
+
         if (contaBarreira == referenciaBarreira){
             barreira = 0; //se ja chegou ao sitio certo entao fica igual
         }
@@ -121,7 +122,7 @@ void moveBarreira(void){
         }
     }else{
         referenciaBarreira = zero; //se o carro passou entao a barreira tem de ir para 0
-        contaBarreira++;
+
         if (contaBarreira == referenciaBarreira){
             barreira = 1; //se ja chegou ao sitio certo entao fica igual
         }
