@@ -1,16 +1,27 @@
 ;Constantes
 fimTempo        EQU 100;
-zero            EQU 3;
-oitenta         EQU 7;
-CentoSessenta   EQU 11;
 
-;Porta servo
-servo   EQU P1.0;
+;PortaLeds
+ledVerde   EQU P1.0;
+ledVermelho EQU P1.1;
+ledAmarelo EQU P1.2;
+
+;Porta da barreira e do sensor
+barreira   EQU P1.3;
+sensor     EQU P1.4;
+
+;Porta Estacionamento
+LedsEstacionamento EQU P0;
+
+;display de 7 egmento 
+display7seg EQU P2;
 
 ;variaveis globais
-botao       EQU 30;
-conta       EQU 31;
-referencia  EQU 32;
+pressionado     EQU 30;
+botao           EQU 32;
+conta           EQU 34;
+constaSegundo   EQU 36;
+passoucarro     EQU 38;
 
 ;inicio
 cseg at 0
@@ -19,6 +30,10 @@ jmp main
 ;interrupcao esterna 0
 cseg at 0x3
 jmp External0_ISR
+
+;interrupcao esteterna 1
+cseg at 0x4
+jmp External1_ISR
 
 ;Interropcao do timer0
 cseg at 0Xb
@@ -31,6 +46,7 @@ Init:
     setb EA; ativa interrupcoes globais
     setb ET0;ativa interrupcao timer0
     setb EX0;ativa interrupcao externa 0
+    setb EX1;ativa interrupcao externa 1
 
     ;Configuracao reisto TMOD
     anl TMOD, #0xF0 ;limpa os 4 bits do timer0
@@ -43,11 +59,35 @@ Init:
     ;Configuracao registos TCON
     setb TR0; comeca o timer 0
     setb IT0; interrupcao ativa a falling edge
+    
+    ;inicializacao das variaveis
+    mov pressionado, 0;
+    mov conta, 0;
+    mov botao, 0;
+    mov passoucarro, 0;
+
+    ;Configuracao dos pinos
+    mov ledVerde , 0; led verde ligado
+    mov ledVermelho , #1; Led vermelho desligado
+    mov ledAmarelo , #1; Led amarelo desligado
+    mov barrreira , #0; barreira para baixo
+    mov sensor , #0; sensor desligado
+    mov LedsEstacionamento , #0 ; todos os leds ligados
+    mov display7seg , 8; display 7 segmentos com o numero 8
+
 ret
 
 ;interrupcao esterna 0
 External0_ISR:
-    mov botao, #1; assinala que o botao foi pressionado
+    mov botao, #0; assinala que o botao de sair foi pressionado
+    mov pressionado, #1;assinala que o botao foi pressionado
+reti
+
+;interrupcao esterna 1
+External1_ISR:
+    mov botao, #1; assinala que o botao fde entrar foi pressionado
+    mov pressionado, #1;assinala que o botao foi pressionado
+
 reti
 
 ;Interrupcao timer 0
@@ -58,36 +98,10 @@ reti
 cseg at 0x50
 main:
     mov sp,#7;inicializacao da stack
-    
-    ;inicializacoes das variaveis globais
-    mov botao, #0;
-    mov conta, #0;
-    mov referencia, #zero;
-    call Init;
-while:;
-    mov a, conta; verifica se atingio o valor de referencia
-    cjne a, referencia, Teste_Fim_Tempo
-    clr servo;
-    Teste_Fim_Tempo:;
-        cjne a, #fimTempo, Teste_Botao_ativo;
-        mov conta, #0;
-        setb servo;
-    Teste_Botao_ativo:;
-        mov a, botao;
-        cjne a, #1, while;
-        mov a, referencia
-        cjne a, #zero, Teste_oitenta
-        mov referencia, #oitenta;
-        jmp Fim_Teste_Botao_ativo
-    Teste_oitenta:;
-        cjne a, #oitenta, Teste_CentoSessenta;
-        mov referencia, #CentoSessenta;
-        jmp Fim_Teste_Botao_ativo
-    Teste_CentoSessenta:;
-        cjne a, #CentoSessenta, Fim_Teste_Botao_ativo
-        mov botao, #0
-    Fim_Teste_Botao_ativo:
-        mov botao, #0
-jmp while
-
+    cmp conta, #0xFF; verifica se ja passaram 200ms
+    jz main; se nao passaram 200ms, volta a verificar
+    mov conta, #0; reinicia a contagem
+    inc LedsEstacionamento
+    rl ledsEstacionamento
+jmp main
 END

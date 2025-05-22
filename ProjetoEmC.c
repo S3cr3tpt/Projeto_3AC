@@ -1,6 +1,19 @@
 #include <reg51.h>
 
-#define fimTempo 60000  // para so fazer operacoes de segundo a segundo
+#define fimTempo 4000  // para so fazer operacoes de segundo a segundo
+#define fimTempoBarreira 100 //so para adnar de 0.2 na barreira
+#define zero 3 
+#define oitenta 7
+
+//Pins P0
+sbit L0 = P0^0;
+sbit L1 = P0^1;
+sbit L2 = P0^2;
+sbit L3 = P0^3;
+sbit L4 = P0^4;
+sbit L5 = P0^5;
+sbit L6 = P0^6;
+sbit L7 = P0^7;
 
 //Pins P1
 sbit ledVerde = P1^0; //pino do led verde
@@ -20,10 +33,11 @@ bit botao = 0; //se o botao estiver a 0 entao e uma entrada se estiver a 1 e uma
 bit pressionado = 0; //para confirmar se o botao foi pressionado
 bit passouCarro = 0; //confirmar se passou o carro
 
-bit ledIntermitente = 0; //vai mudando entre 0 e 1 a cada segundo
-
 unsigned int conta = 0; //para ajudar a contar 1 segundo
 unsigned int contaSegundo = 0; //contador do timer a cada 1s
+unsigned int abreBarreira = 0; //para abrir a barreira
+unsigned char referenciaBarreira = zero; //referencia da barreira
+unsigned char contaBarreira = 0; //contador da barreira
 unsigned char Leds; //Leds
 
 void Init(void){
@@ -39,22 +53,23 @@ void Init(void){
 
     //configuracao Timer 0
     TR0 = 1; //inicia o timer 0
+    TH0 = 0x06;
+    TL0 = 0x06;
     IT0 = 1;//interrupcao esterna ativa a falling edge
 
     Leds = 0x00;
     P0 = Leds;
 	
+    //inicializa o display 
+    P2 = 0x00; //inicializa o display a 0
+
     ledVerde = 0; //led verde ligado
     ledVermelho = 1; //led vermelho desligado
     ledAmarelo = 1; //led amarelo desligado
-		barreira = 0;//a barreira comeca para baixo
-		sensor = 0;//inicializa o sensor a 0
+	barreira = 0;//a barreira comeca para baixo
+	sensor = 1;//inicializa o sensor a 0
 		
-    //comecar com o display de 7 segmentos a 9
-    segmentoA = 0;
-    segmentoB = 0;
-    segmentoC = 0;
-    segmentoD = 1; 
+
 }
 
 //interrupcao externa 0
@@ -75,69 +90,46 @@ void Timer0_ISR(void) interrupt 1{
 }
 
 void display(void){
-	switch (Leds){
-    case 255:
-        segmentoA = 0;
-        segmentoB = 0;
-        segmentoC = 0;
-        segmentoD = 0;
-        break;
-    case 127:
-        segmentoA = 1;
-        segmentoB = 0;
-        segmentoC = 0;
-        segmentoD = 0;
-        break;
-    case 63:
-        segmentoA = 0;
-        segmentoB = 1;
-        segmentoC = 0;
-        segmentoD = 0;
-        break;
-    case 31:
-        segmentoA = 1;
-        segmentoB = 1;
-        segmentoC = 0;
-        segmentoD = 0;
-        break;
-    case 15:
-        segmentoA = 0;
-        segmentoB = 0;
-        segmentoC = 1;
-        segmentoD = 0;
-        break;
-    case 7:
-        segmentoA = 1;
-        segmentoB = 0;
-        segmentoC = 1;
-        segmentoD = 0;
-        break;
-    case 3:
-        segmentoA = 0;
-        segmentoB = 1;
-        segmentoC = 1;
-        segmentoD = 0;
-        break;
-    case 1:
-        segmentoA = 1;
-        segmentoB = 1;
-        segmentoC = 1;
-        segmentoD = 0;
-        break;
-    case 0:
-        segmentoA = 0;
-        segmentoB = 0;
-        segmentoC = 0;
-        segmentoD = 1;
-        break;
-    default:
-        break;
-    }
+    unsigned int Segmentos = 0;
+    if (~(L0)) {Segmentos += 1;}
+    if (~(L1)) {Segmentos += 1;}
+    if (~(L2)) {Segmentos += 1;}
+    if (~(L3)) {Segmentos += 1;}
+    if (~(L4)) {Segmentos += 1;}
+    if (~(L5)) {Segmentos += 1;}
+    if (~(L6)) {Segmentos += 1;}
+    if (~(L7)) {Segmentos += 1;}
+    P2 = Segmentos; //atualiza o display
 }
 
 void leSensor(){
-    if (sensor == 1){
+    if (sensor == 0){
         passouCarro = 1;
+    }
+}
+
+void moveBarreira(void){
+    if (abreBarreira){
+        referenciaBarreira = oitenta; //se o carro passou entao a barreira tem de ir para 80
+        contaBarreira++;
+        if (contaBarreira == referenciaBarreira){
+            barreira = 0; //se ja chegou ao sitio certo entao fica igual
+        }
+        if (contaBarreira ==  fimTempoBarreira){
+            contaBarreira = 0; //reseta o contador
+            barreira = 1; //levanta a barreira
+        }
+    }else{
+        referenciaBarreira = zero; //se o carro passou entao a barreira tem de ir para 0
+        contaBarreira++;
+        if (contaBarreira == referenciaBarreira){
+            barreira = 1; //se ja chegou ao sitio certo entao fica igual
+        }
+        if (contaBarreira ==  fimTempoBarreira){
+            contaBarreira = 0; //reseta o contador
+            barreira = 0; //baixa a barreira 
+            //depois testar como e que se baixa a barreira
+        }
     }
 }
 
@@ -147,37 +139,31 @@ void main(void){
     while (1){ //loop inifinito
         display();
         leSensor();
+        moveBarreira();
         if (conta == fimTempo){
-            conta = 0; //volta a contar
-            if (pressionado){    
-                contaSegundo ++; //passou 1 segundo
-                if (segmentoA || segmentoB || segmentoC || segmentoD || botao ){ //se tiver lugares ou se for para sair
+              conta = 0; //volta a contar
+            if (segmentoA || segmentoB || segmentoC || segmentoD || botao){    
+                if (pressionado){ //se tiver lugares ou se for para sair
+                    contaSegundo ++; //passou 1 segundo
                     ledVerde = 0; //ativa o verde
-                    barreira = 1;//levanta a barreira
-                    ledAmarelo = ~ledAmarelo;//fica intermitente
+                    ledVermelho = 1; //desliga o vermelho
+                    ledAmarelo = ~ledAmarelo; //amarelo intermitente
+                    abreBarreira = 1;//levanta a barreira
                     if (contaSegundo >= 10){//espera ate ser maior que 10 segundos 
                         if (passouCarro){
-                            barreira = 0; //baixa a barreira 	
+                            abreBarreira = 0; //baixa a barreira 
+                            passouCarro = 0; //reseta o carro
                             pressionado = 0; //volta a colocar o botao de passou a 0
                             contaSegundo = 0; //reseta o timer		
-                            sensor = 0; //reseta o sensor	
+                            sensor = 1; //reseta o sensor	
                             ledAmarelo = 1; //desliga o led amareleo							
-                            if (botao){//se for para entrar 
-                                Leds = (Leds >> 1);//deslocar para a direita
-                                P0 = Leds;  
-                            }
-                            else{//se for para sair    
-                                Leds = (Leds << 1);//deslocar para a esquerda
-                                Leds ++; //incrementa 1 nos lugares
-                                P0 = Leds;
-                            }
                         }
                     } 
-                }else{
-                    ledVermelho = 0;//ativa o led vermelho
                 }
-            }
-        
+            }else{
+                    ledVermelho = 0;//ativa o led vermelho
+                    ledVerde = 1; //desliga o led verde
+                }
         }
     }
 }
