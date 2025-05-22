@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/21/2025 04:32:23 PAGE 1   
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/22/2025 01:53:11 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE PROJETOEMC
@@ -27,115 +27,187 @@ line level    source
   17          
   18          //constantes
   19          bit botao = 0; //se o botao estiver a 0 entao e uma entrada se estiver a 1 e uma saida
-  20          bit passouCarro = 0; 
-  21          
-  22          bit ledIntermitente = 0; //vai mudando entre 0 e 1 a cada segundo
-  23          
-  24          unsigned int conta = 0; //para ajudar a contar 1 segundo
-  25          unsigned int contaSegundo = 0; //contador do timer a cada 1s
-  26          unsigned int Leds = 0; //variavel temporaria
-  27          
-  28          void Init(void){
-  29   1          //configuracao Registo IE
-  30   1          EA = 1; //habilita interrupcao global
-  31   1          ET0 = 1; //habilita interrupcao do timer 0
-  32   1          EX0 = 1; //habilita interrupcao externa 0
-  33   1          EX1 = 1; //habilita interrupcao externa 1
-  34   1      
-  35   1          //configuracao Registo TMOD
-  36   1          TMOD &= 0xF0; // limpa os 4 bits do timer 0 (8 bits -auto reload)
-  37   1          TMOD |= 0x02; //modo 2 do timer 0
-  38   1      
-  39   1          //configuracao Timer 0
-  40   1          TR0 = 1; //inicia o timer 0
-  41   1          IT0 = 1;//interrupcao esterna ativa a falling edge
-  42   1      
-  43   1          P0 = Leds;
-  44   1          
-  45   1          ledVerde = 0; //led verde ligado
-  46   1          ledVermelho = 1; //led vermelho desligado
-  47   1          ledAmarelo = 1; //led amarelo desligado
-  48   1      
-  49   1          //comecar com o display de 7 segmentos a 9
-  50   1          segmentoA = 0;
-  51   1          segmentoB = 0;
-  52   1          segmentoC = 0;
-  53   1          segmentoD = 1; 
-  54   1      }
-C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/21/2025 04:32:23 PAGE 2   
+  20          bit pressionado = 0; //para confirmar se o botao foi pressionado
+  21          bit passouCarro = 0; //confirmar se passou o carro
+  22          
+  23          bit ledIntermitente = 0; //vai mudando entre 0 e 1 a cada segundo
+  24          
+  25          unsigned int conta = 0; //para ajudar a contar 1 segundo
+  26          unsigned int contaSegundo = 0; //contador do timer a cada 1s
+  27          unsigned char Leds; //Leds
+  28          
+  29          void Init(void){
+  30   1          //configuracao Registo IE
+  31   1          EA = 1; //habilita interrupcao global
+  32   1          ET0 = 1; //habilita interrupcao do timer 0
+  33   1          EX0 = 1; //habilita interrupcao externa 0
+  34   1          EX1 = 1; //habilita interrupcao externa 1
+  35   1      
+  36   1          //configuracao Registo TMOD
+  37   1          TMOD &= 0xF0; // limpa os 4 bits do timer 0 (8 bits -auto reload)
+  38   1          TMOD |= 0x02; //modo 2 do timer 0
+  39   1      
+  40   1          //configuracao Timer 0
+  41   1          TR0 = 1; //inicia o timer 0
+  42   1          IT0 = 1;//interrupcao esterna ativa a falling edge
+  43   1      
+  44   1          Leds = 0x00;
+  45   1          P0 = Leds;
+  46   1        
+  47   1          ledVerde = 0; //led verde ligado
+  48   1          ledVermelho = 1; //led vermelho desligado
+  49   1          ledAmarelo = 1; //led amarelo desligado
+  50   1          barreira = 0;//a barreira comeca para baixo
+  51   1          sensor = 0;//inicializa o sensor a 0
+  52   1          
+  53   1          //comecar com o display de 7 segmentos a 9
+  54   1          segmentoA = 0;
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/22/2025 01:53:11 PAGE 2   
 
-  55          
-  56          //interrupcao externa 0
-  57          void External0_ISR(void) interrupt 0{
-  58   1          botao = 0; //assinala que o botao para entrar foi pressionado
-  59   1      
-  60   1      }
-  61          
-  62          //interrupcao externa 1
-  63          void External1_ISR(void) interrupt 2{
-  64   1          botao = 1; //assinala que o botao para sair foi pressionado
-  65   1      }
-  66          
-  67          //interrupcao tempo a cada segundo
-  68          void Timer0_ISR(void) interrupt 1{
-  69   1          conta ++;
+  55   1          segmentoB = 0;
+  56   1          segmentoC = 0;
+  57   1          segmentoD = 1; 
+  58   1      }
+  59          
+  60          //interrupcao externa 0
+  61          void External0_ISR(void) interrupt 0{
+  62   1          botao = 0; //assinala que o botao para entrar foi pressionado
+  63   1          pressionado = 1;//foi pressionado
+  64   1      }
+  65          
+  66          //interrupcao externa 1
+  67          void External1_ISR(void) interrupt 2{
+  68   1          botao = 1; //assinala que o botao para sair foi pressionado
+  69   1          pressionado = 1;//foi presionado
   70   1      }
   71          
-  72          void display(void){
-  73   1      
-  74   1      }
-  75          
-  76          void leSensor(){
-  77   1          sensor = 1; //so para testar
-  78   1      }
-  79          
-  80          void main(void){
-  81   1          //inicializacoes
-  82   1      
-  83   1        Init();
-  84   1          while (1){ //loop inifinito
-  85   2              display();
-  86   2              if (conta == fimTempo){
-  87   3                  conta = 0; //volta a contar
-  88   3                  contaSegundo = 10; //passou 1 segundo
-  89   3                  if (segmentoA || segmentoB || segmentoC || segmentoD || botao){ //se tiver lugares ou se for p
-             -ara sair
-  90   4                      leSensor();
-  91   4                      barreira = 1;//levanta a barreira
-  92   4                      if (contaSegundo >= 10){//espera ate ser maior que 10 segundos 
-  93   5                          if (sensor){
-  94   6                              if (botao){//se for para entrar 
-  95   7                                  barreira = 0; //baixa a barreira 
-  96   7                                  Leds = (Leds >> 1) | (Leds << 7);//deslocar para a esquerda
-  97   7                                  P0 = Leds;  
-  98   7                                  //sensor = 0;//volta a colocar o sensor a 0
-  99   7                              }
- 100   6                              else{//se for para sair    
- 101   7                                barreira = 0; //baixa a barreira 
- 102   7                                  Leds = (Leds << 1) | (Leds >> 7);//deslocar para a direita
- 103   7                                  P0 = Leds;
- 104   7                                  P0 = P0 + 1;
- 105   7                                  Leds = P0; //atualiza os Leds
- 106   7                                  //sensor = 0;//volta a colocar o sensor a 0
- 107   7                              }
- 108   6                          }
- 109   5                      }
- 110   4                  }
- 111   3              }
- 112   2          }
- 113   1      }
+  72          //interrupcao tempo a cada segundo
+  73          void Timer0_ISR(void) interrupt 1{
+  74   1          conta ++;
+  75   1      }
+  76          
+  77          void display(void){
+  78   1        switch (Leds){
+  79   2          case 255:
+  80   2              segmentoA = 0;
+  81   2              segmentoB = 0;
+  82   2              segmentoC = 0;
+  83   2              segmentoD = 0;
+  84   2              break;
+  85   2          case 127:
+  86   2              segmentoA = 1;
+  87   2              segmentoB = 0;
+  88   2              segmentoC = 0;
+  89   2              segmentoD = 0;
+  90   2              break;
+  91   2          case 63:
+  92   2              segmentoA = 0;
+  93   2              segmentoB = 1;
+  94   2              segmentoC = 0;
+  95   2              segmentoD = 0;
+  96   2              break;
+  97   2          case 31:
+  98   2              segmentoA = 1;
+  99   2              segmentoB = 1;
+ 100   2              segmentoC = 0;
+ 101   2              segmentoD = 0;
+ 102   2              break;
+ 103   2          case 15:
+ 104   2              segmentoA = 0;
+ 105   2              segmentoB = 0;
+ 106   2              segmentoC = 1;
+ 107   2              segmentoD = 0;
+ 108   2              break;
+ 109   2          case 7:
+ 110   2              segmentoA = 1;
+ 111   2              segmentoB = 0;
+ 112   2              segmentoC = 1;
+ 113   2              segmentoD = 0;
+ 114   2              break;
+ 115   2          case 3:
+ 116   2              segmentoA = 0;
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/22/2025 01:53:11 PAGE 3   
 
+ 117   2              segmentoB = 1;
+ 118   2              segmentoC = 1;
+ 119   2              segmentoD = 0;
+ 120   2              break;
+ 121   2          case 1:
+ 122   2              segmentoA = 1;
+ 123   2              segmentoB = 1;
+ 124   2              segmentoC = 1;
+ 125   2              segmentoD = 0;
+ 126   2              break;
+ 127   2          case 0:
+ 128   2              segmentoA = 0;
+ 129   2              segmentoB = 0;
+ 130   2              segmentoC = 0;
+ 131   2              segmentoD = 1;
+ 132   2              break;
+ 133   2          default:
+ 134   2              break;
+ 135   2          }
+ 136   1      }
+ 137          
+ 138          void leSensor(){
+ 139   1          if (sensor == 1){
+ 140   2              passouCarro = 1;
+ 141   2          }
+ 142   1      }
+ 143          
+ 144          void main(void){
+ 145   1          //inicializacoes
+ 146   1        Init();
+ 147   1          while (1){ //loop inifinito
+ 148   2              display();
+ 149   2              leSensor();
+ 150   2              if (conta == fimTempo){
+ 151   3                  conta = 0; //volta a contar
+ 152   3                  if (pressionado){    
+ 153   4                      contaSegundo ++; //passou 1 segundo
+ 154   4                      if (segmentoA || segmentoB || segmentoC || segmentoD || botao ){ //se tiver lugares ou se 
+             -for para sair
+ 155   5                          ledVerde = 0; //ativa o verde
+ 156   5                          barreira = 1;//levanta a barreira
+ 157   5                          ledAmarelo = ~ledAmarelo;//fica intermitente
+ 158   5                          if (contaSegundo >= 10){//espera ate ser maior que 10 segundos 
+ 159   6                              if (passouCarro){
+ 160   7                                  barreira = 0; //baixa a barreira  
+ 161   7                                  pressionado = 0; //volta a colocar o botao de passou a 0
+ 162   7                                  contaSegundo = 0; //reseta o timer    
+ 163   7                                  sensor = 0; //reseta o sensor 
+ 164   7                                  ledAmarelo = 1; //desliga o led amareleo              
+ 165   7                                  if (botao){//se for para entrar 
+ 166   8                                      Leds = (Leds >> 1);//deslocar para a direita
+ 167   8                                      P0 = Leds;  
+ 168   8                                  }
+ 169   7                                  else{//se for para sair    
+ 170   8                                      Leds = (Leds << 1);//deslocar para a esquerda
+ 171   8                                      Leds ++; //incrementa 1 nos lugares
+ 172   8                                      P0 = Leds;
+ 173   8                                  }
+ 174   7                              }
+ 175   6                          } 
+ 176   5                      }else{
+ 177   5                          ledVermelho = 0;//ativa o led vermelho
+C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/22/2025 01:53:11 PAGE 4   
 
-C51 COMPILER V9.60.7.0   PROJETOEMC                                                        05/21/2025 04:32:23 PAGE 3   
+ 178   5                      }
+ 179   4                  }
+ 180   3              
+ 181   3              }
+ 182   2          }
+ 183   1      }
+
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    216    ----
+   CODE SIZE        =    285    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      6    ----
+   DATA SIZE        =      5    ----
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =      3    ----
+   BIT SIZE         =      4    ----
 END OF MODULE INFORMATION.
 
 
