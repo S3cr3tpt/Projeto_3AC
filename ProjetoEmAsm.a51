@@ -1,8 +1,8 @@
 ;Constantes
-fimTempo            EQU 5000; 4000*250us = 1s
-fimTempoBarreira    EQU 100; 100*250us = 25ms
-zeroBarreira        EQU 3; 3*250us = 7.5ms
-oitentaBarreira     EQU 7; 7*250us = 17.5ms
+fimTempo            EQU 100; 100 *50 *200us = 1s
+fimTempoBarreira    EQU 100; ; 100 * 200us = 20ms
+zeroBarreira        EQU 3; 3 * 200us = 600us
+oitentaBarreira     EQU 7; 7 * 200us = 1400us
 
 ;Portas P0
 L0 EQU P0.0;
@@ -28,16 +28,17 @@ segmentoC EQU P2.2;
 segmentoD EQU P2.3;
 
 ;variaveis globais
-pressionado         EQU 30;
-botao               EQU 31;
-conta               EQU 32;
-contaSegundo        EQU 33;
-contaBarreira       EQU 34;
-abreBarreira        EQU 35;
-passoucarro         EQU 36;
-referenciaBarreira  EQU 37;
-testebitor			EQU 38;
-adjudaContador		EQU 39;
+pressionado         EQU 0x30;
+botao               EQU 0x31;
+conta               EQU 0x32;
+contaSegundo        EQU 0x33;
+contaBarreira       EQU 0x34;
+abreBarreira        EQU 0x35;
+passoucarro         EQU 0x36;
+referenciaBarreira  EQU 0x37;
+testebitor			EQU 0x38;
+adjudaContador		EQU 0x39;
+bufferAbreBarreira	EQU 0x40;
 
 ;inicio
 cseg at 0
@@ -69,9 +70,9 @@ Init:
     anl TMOD, #0xF0 ;limpa os 4 bits do timer0
     orl TMOD, #0x02;modo 2 do timer 0
 
-    ;Configuracao timer 0 - 250us
-    mov TH0, #0x06; Timer 0 - 250
-    mov TL0, #0x06;
+    ;Configuracao timer 0 - 200us
+    mov TH0, #56; Timer 0 - 200
+    mov TL0, #56;
 
     ;Configuracao registos TCON
     setb TR0; comeca o timer 0
@@ -79,19 +80,16 @@ Init:
     
     ;inicializacao das variaveis
     clr pressionado;
-    clr conta;
+    mov conta, #0;
     clr botao;
     clr passoucarro;
 	clr adjudaContador;
     ;Configuracao dos pinos
-    ;Porta 0
-    mov P0, #0xFF; porta 0 todos os leds ligados
     ;Porta 1
     clr ledVerde; led verde ligado
     setb ledVermelho; Led vermelho desligado
     setb ledAmarelo; Led amarelo desligado
-    clr barreira; barreira para baixo
-    setb sensor; sensor desligado
+    setb barreira; barreira para baixo
     mov contaBarreira, #0; contaBarreira a 0
     
     ;Porta 2
@@ -117,7 +115,8 @@ reti
 
 ;Interrupcao timer 0
 Timer0_ISR:
-    inc conta; incrementa a contagem dos 250us
+    inc conta; incrementa a contagem dos 200us
+    inc contaBarreira; incrementa a contagem da barreira
 reti
 
 cseg at 0xA0
@@ -133,15 +132,17 @@ whileTrue:
 	inc adjudaContador	
 	mov conta,#0
 	mov r3, adjudaContador
-	cjne r3, #16, whileTrue
+	cjne r3, #50, whileTrue
     mov adjudaContador, #0
     mov conta, #0
 	;aqui ja passou 1 segundo
+	jb botao, ifPressionado;se o botao estiver on salta para o if
+    setb ledVermelho; led vermelho ligado
+    clr ledVerde; led verde ligado
     jb segmentoA, ifPressionado;se o a estiver on salta para o if
     jb segmentoB, ifPressionado;se o b estiver on salta para o if
     jb segmentoC, ifPressionado;se o c estiver on salta para o if
     jb segmentoD, ifPressionado;se o d estiver on salta para o if
-    jb botao, ifPressionado;se o botao estiver on salta para o if
     jmp elseNaoLugares;se nao houver nada ligado salta para o naoLugares
 ifPressionado:
     jnb pressionado, whileTrue; se o botao nao estiver pressionado volta ao inicio
@@ -158,7 +159,6 @@ ifPressionado:
     clr passoucarro; da reset ao carro
     clr pressionado; da reset ao pressionado
     mov contaSegundo, #0; da reset a contagem dos segundos
-    setb sensor; reseta o sensor forcado
     setb ledAmarelo; desliga o led amarelo
 jmp whileTrue; volta ao inicio do ciclo
 elseNaoLugares:
@@ -196,36 +196,39 @@ fimDisplay:
 ret
 
 leSensor:
-    jb sensor, fimSensor; verifica se o sensor esta a 0
-    setb passoucarro; assinala que o carro passou 
+    jb sensor, bufferFimSensor; verifica se o sensor esta a 0
+    setb bufferAbreBarreira; assinala que o carro passou 
+bufferFimSensor:
+    jnb bufferAbreBarreira, fimSensor; verifica se o carro passou
+    jnb sensor, fimSensor; verifica se o sensor esta a 0
+    setb passoucarro; assinala que o carro passou
+    clr bufferAbreBarreira; limpa o buffer
 fimSensor:
     ret
 
 moveBarreira:
-    inc contaBarreira; incrementa a contagem da barreira
     jnb abreBarreira, elseBarreira; verifica se a barreira esta a abrir
-    mov referenciaBarreira, oitentaBarreira; coloca o valor de 80 na referencia da barreira
-    mov R0, contaBarreira
-    cjne R0, #referenciaBarreira, continuaMovimento; verifica se a contagem da barreira e menor que 80
+    mov referenciaBarreira, #oitentaBarreira; coloca o valor de 80 na referencia da barreira
+    mov a, contaBarreira; coloca o valor da contagem no registo A
+    cjne a, referenciaBarreira, continuaMovimento; verifica se a contagem da barreira e menor que 80
     clr barreira; Barreira nao move
-    jmp fimBarreira; salta para o fim da barreira
 continuaMovimento:
-    mov R0, contaBarreira
-    cjne R0, #fimTempoBarreira, fimBarreira; verifica se a contagem da barreira e menor que 25ms
+    mov a, contaBarreira
+    cjne a, #fimTempoBarreira, fimBarreira; verifica se a contagem da barreira e menor que 25ms
     mov contaBarreira, #0; limpa a contagem da barreira
     setb barreira; Barreira para cima
     jmp fimBarreira; salta para o fim da barreira
 elseBarreira:
-    mov referenciaBarreira, zeroBarreira; coloca o valor de 0 na referencia da barreira
-    mov R0, contaBarreira
-    cjne R0, #referenciaBarreira, continuaMovimento2; verifica se a contagem da barreira e menor que 0
-    setb barreira; Barreira nao move
+    mov referenciaBarreira, #zeroBarreira; coloca o valor de 0 na referencia da barreira
+    mov a, contaBarreira ; coloca o valor da contagem no registo R0
+    cjne a, referenciaBarreira, continuaMovimento2; verifica se a contagem da barreira e menor que 0
+    clr barreira; Barreira nao move
     jmp fimBarreira; salta para o fim da barreira
 continuaMovimento2:
-    mov R0, contaBarreira
-    cjne R0, #fimTempoBarreira, fimBarreira; verifica se a contagem da barreira e menor que 25ms
+    mov a, contaBarreira; coloca o valor da contagem no registo R0
+    cjne a, #fimTempoBarreira, fimBarreira; verifica se a contagem da barreira e menor que 25ms
     mov contaBarreira, #0; limpa a contagem da barreira
-    clr barreira; Barreira para baixo
+    setb barreira; Barreira para baixo
     jmp fimBarreira; salta para o fim da barreira
 fimBarreira:
     ret

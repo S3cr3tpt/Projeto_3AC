@@ -150,7 +150,7 @@ void main(void){
             if (segmentoA || segmentoB || segmentoC || segmentoD){  
                 ledVerde = 0; //ativa o led verde
                 ledVermelho = 1; //desliga o led vermelho  
-                if (botao){    
+                if (segmentoA || segmentoB || segmentoC || segmentoD || botao){    
                     if (pressionado){ //se tiver lugares ou se for para sair
                         contaSegundo ++; //passou 1 segundo
                         ledVerde = 0; //ativa o verde
