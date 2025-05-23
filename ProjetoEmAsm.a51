@@ -1,5 +1,5 @@
 ;Constantes
-fimTempo            EQU 250; 4000*250us = 1s
+fimTempo            EQU 5000; 4000*250us = 1s
 fimTempoBarreira    EQU 100; 100*250us = 25ms
 zeroBarreira        EQU 3; 3*250us = 7.5ms
 oitentaBarreira     EQU 7; 7*250us = 17.5ms
@@ -85,7 +85,7 @@ Init:
 	clr adjudaContador;
     ;Configuracao dos pinos
     ;Porta 0
-    mov P0, #0x00; porta 0 todos os leds ligados
+    mov P0, #0xFF; porta 0 todos os leds ligados
     ;Porta 1
     clr ledVerde; led verde ligado
     setb ledVermelho; Led vermelho desligado
