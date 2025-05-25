@@ -1,137 +1,258 @@
-A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/22/2025 11:29:01 PAGE     1
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/25/2025 01:39:35 PAGE     1
 
 
 MACRO ASSEMBLER A51 V8.2.7.0
-NO OBJECT MODULE REQUESTED
+OBJECT MODULE PLACED IN .\Objects\ProjetoEmAsm.obj
 ASSEMBLER INVOKED BY: C:\Keil_v5\C51\BIN\A51.EXE ProjetoEmAsm.a51 SET(SMALL) DEBUG PRINT(.\Listings\ProjetoEmAsm.lst) OB
                       JECT(.\Objects\ProjetoEmAsm.obj) EP
 
 LOC  OBJ            LINE     SOURCE
 
                        1     ;Constantes
-  0064                 2     fimTempo        EQU 100;
-                       3     
-                       4     ;PortaLeds
-  0090                 5     ledVerde   EQU P1.0;
-  0091                 6     ledVermelho EQU P1.1;
-  0092                 7     ledAmarelo EQU P1.2;
-                       8     
-                       9     ;Porta da barreira e do sensor
-  0093                10     barreira   EQU P1.3;
-  0094                11     sensor     EQU P1.4;
-                      12     
-                      13     ;Porta Estacionamento
-  0080                14     LedsEstacionamento EQU P0;
-                      15     
-                      16     ;display de 7 egmento 
-  00A0                17     display7seg EQU P2;
-                      18     
-                      19     ;variaveis globais
-  001E                20     pressionado     EQU 30;
-  0020                21     botao           EQU 32;
-  0022                22     conta           EQU 34;
-  0024                23     constaSegundo   EQU 36;
-  0026                24     passoucarro     EQU 38;
-                      25     
-                      26     ;inicio
-----                  27     cseg at 0
-0000 804E             28     jmp main
+  0064                 2     fimTempo            EQU 100; 100 *50 *200us = 1s
+  0064                 3     fimTempoBarreira    EQU 100; ; 100 * 200us = 20ms
+  0003                 4     zeroBarreira        EQU 3; 3 * 200us = 600us
+  0007                 5     oitentaBarreira     EQU 7; 7 * 200us = 1400us
+                       6     
+                       7     ;Portas P0
+  0080                 8     L0 EQU P0.0;
+  0081                 9     L1 EQU P0.1;
+  0082                10     L2 EQU P0.2;
+  0083                11     L3 EQU P0.3;
+  0084                12     L4 EQU P0.4;
+  0085                13     L5 EQU P0.5;
+  0086                14     L6 EQU P0.6;
+  0087                15     L7 EQU P0.7;
+                      16     
+                      17     ;Portas P1
+  0090                18     ledVerde   EQU P1.0;
+  0091                19     ledVermelho EQU P1.1;
+  0092                20     ledAmarelo EQU P1.2;
+  0093                21     barreira   EQU P1.3;
+  0094                22     sensor     EQU P1.4;
+                      23     
+                      24     ;Portas P2
+  00A0                25     segmentoA EQU P2.0;
+  00A1                26     segmentoB EQU P2.1;
+  00A2                27     segmentoC EQU P2.2;
+  00A3                28     segmentoD EQU P2.3;
                       29     
-                      30     ;interrupcao esterna 0
-----                  31     cseg at 0x3
-0003 8042             32     jmp External0_ISR
-                      33     
-                      34     ;interrupcao esteterna 1
-----                  35     cseg at 0x4
-0004 8048             36     jmp External1_ISR
-                      37     
-                      38     ;Interropcao do timer0
-----                  39     cseg at 0Xb
-000B 8048             40     jmp Timer0_ISR
+                      30     ;variaveis globais
+  0030                31     pressionado         EQU 0x30;assinala que o botao foi pressionado
+  0031                32     botao               EQU 0x31;assinala que o botao foi pressionado
+  0032                33     conta               EQU 0x32;conta o tempo em 200us
+  0033                34     contaSegundo        EQU 0x33;conta o tempo em segundos
+  0034                35     contaBarreira       EQU 0x34;conta o tempo da barreira em 200us
+  0035                36     abreBarreira        EQU 0x35;assinala que a barreira esta a abrir
+  0036                37     passoucarro         EQU 0x36;assinala que o carro passou
+  0037                38     referenciaBarreira  EQU 0x37;assinala a referencia da barreira
+  0039                39     adjudaContador          EQU 0x39;assinala a ajuda do contador
+  0040                40     bufferAbreBarreira      EQU 0x40;assinala que o carro passou e a barreira deve abrir
                       41     
-                      42     ;inicializacoes
-000D                  43     Init:
-                      44     
-                      45         ;Configuracao Registo IE
-000D D2AF             46         setb EA; ativa interrupcoes globais
-000F D2A9             47         setb ET0;ativa interrupcao timer0
-0011 D2A8             48         setb EX0;ativa interrupcao externa 0
-0013 D2AA             49         setb EX1;ativa interrupcao externa 1
-                      50     
-                      51         ;Configuracao reisto TMOD
-0015 5389F0           52         anl TMOD, #0xF0 ;limpa os 4 bits do timer0
-0018 438902           53         orl TMOD, #0x02;modo 2 do timer 0
-                      54     
-                      55         ;Configuracao timer 0 - 200us
-001B 758C38           56         mov TH0, #0x38; Timer 0 - 200
-001E 758A38           57         mov TL0, #0x38
-A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/22/2025 11:29:01 PAGE     2
+                      42     ;inicio
+----                  43     cseg at 0
+0000 01A0             44     jmp main
+                      45     
+                      46     ;interrupcao esterna 0
+----                  47     cseg at 0x3
+0003 018A             48     jmp External0_ISR
+                      49     
+                      50     ;interrupcao esteterna 1
+----                  51     cseg at 0x13
+0013 807A             52     jmp External1_ISR
+                      53     
+                      54     ;Interropcao do timer0
+----                  55     cseg at 0Xb
+000B 0194             56     jmp Timer0_ISR
+                      57     
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/25/2025 01:39:35 PAGE     2
 
-                      58     
-                      59         ;Configuracao registos TCON
-0021 D28C             60         setb TR0; comeca o timer 0
-0023 D288             61         setb IT0; interrupcao ativa a falling edge
-                      62         
-                      63         ;inicializacao das variaveis
-0025 85001E           64         mov pressionado, 0;
-0028 850022           65         mov conta, 0;
-002B 850020           66         mov botao, 0;
-002E 850026           67         mov passoucarro, 0;
-                      68     
-                      69         ;Configuracao dos pinos
-0031 850000           70         mov ledVerde , 0; led verde ligado
-*** _________________________________^
-*** ERROR #A48 IN 70 (ProjetoEmAsm.a51, LINE 70): DATA-ADDRESS EXPECTED
-0034 750001           71         mov ledVermelho , #1; Led vermelho desligado
-*** _________________________________^
-*** ERROR #A48 IN 71 (ProjetoEmAsm.a51, LINE 71): DATA-ADDRESS EXPECTED
-0037 750001           72         mov ledAmarelo , #1; Led amarelo desligado
-*** _________________________________^
-*** ERROR #A48 IN 72 (ProjetoEmAsm.a51, LINE 72): DATA-ADDRESS EXPECTED
-003A                  73         mov barrreira , #0; barreira para baixo
-*** _________________________________^
-*** ERROR #A45 IN 73 (ProjetoEmAsm.a51, LINE 73): UNDEFINED SYMBOL (PASS-2)
-003D 750000           74         mov sensor , #0; sensor desligado
-*** _________________________________^
-*** ERROR #A48 IN 74 (ProjetoEmAsm.a51, LINE 74): DATA-ADDRESS EXPECTED
-0040 758000           75         mov LedsEstacionamento , #0 ; todos os leds ligados
-0043 8508A0           76         mov display7seg , 8; display 7 segmentos com o numero 8
-                      77     
-0046 22               78     ret
-                      79     
-                      80     ;interrupcao esterna 0
-0047                  81     External0_ISR:
-0047 752000           82         mov botao, #0; assinala que o botao de sair foi pressionado
-004A 751E01           83         mov pressionado, #1;assinala que o botao foi pressionado
-004D 32               84     reti
-                      85     
-                      86     ;interrupcao esterna 1
-004E                  87     External1_ISR:
-004E 752001           88         mov botao, #1; assinala que o botao fde entrar foi pressionado
-0051 751E01           89         mov pressionado, #1;assinala que o botao foi pressionado
-                      90     
-0054 32               91     reti
-                      92     
-                      93     ;Interrupcao timer 0
-0055                  94     Timer0_ISR:
-0055 0522             95         inc conta; incrementa a contagem dos 200us
-0057 32               96     reti
-                      97     
-----                  98     cseg at 0x50
-0050                  99     main:
-0050 758107          100         mov sp,#7;inicializacao da stack
-                     101         cmp conta, #0xFF; verifica se ja passaram 200ms
-*** _____________________________^
-*** ERROR #A9 IN 101 (ProjetoEmAsm.a51, LINE 101): SYNTAX ERROR
-0053 60FB            102         jz main; se nao passaram 200ms, volta a verificar
-0055 752200          103         mov conta, #0; reinicia a contagem
-0058 0580            104         inc LedsEstacionamento
-005A                 105         rl ledsEstacionamento
-*** ________________________________^
-*** ERROR #A39 IN 105 (ProjetoEmAsm.a51, LINE 105): REGISTER OPERAND EXPECTED
-005A 80F4            106     jmp main
-                     107     END
-A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/22/2025 11:29:01 PAGE     3
+                      58     ;inicializacoes
+----                  59     cseg at 0x50
+0050                  60     Init:
+                      61     
+                      62         ;Configuracao Registo IE
+0050 D2AF             63         setb EA; ativa interrupcoes globais
+0052 D2A9             64         setb ET0;ativa interrupcao timer0
+0054 D2A8             65         setb EX0;ativa interrupcao externa 0
+0056 D2AA             66         setb EX1;ativa interrupcao externa 1
+                      67     
+                      68         ;Configuracao reisto TMOD
+0058 5389F0           69         anl TMOD, #0xF0 ;limpa os 4 bits do timer0
+005B 438902           70         orl TMOD, #0x02;modo 2 do timer 0
+                      71     
+                      72         ;Configuracao timer 0 - 200us
+005E 758C38           73         mov TH0, #56; Timer 0 - 200
+0061 758A38           74         mov TL0, #56;
+                      75     
+                      76         ;Configuracao registos TCON
+0064 D28C             77         setb TR0; comeca o timer 0
+0066 D288             78         setb IT0; interrupcao ativa a falling edge
+                      79         
+                      80         ;inicializacao das variaveis
+0068 C230             81         clr pressionado;
+006A 753200           82         mov conta, #0;
+006D C231             83         clr botao;
+006F C236             84         clr passoucarro;
+0071 C239             85             clr adjudaContador;
+                      86         ;Configuracao dos pinos
+                      87         ;Porta 1
+0073 C290             88         clr ledVerde; led verde ligado
+0075 D291             89         setb ledVermelho; Led vermelho desligado
+0077 D292             90         setb ledAmarelo; Led amarelo desligado
+0079 D293             91         setb barreira; barreira para baixo
+007B 753400           92         mov contaBarreira, #0; contaBarreira a 0
+                      93         
+                      94         ;Porta 2
+007E 75A000           95         mov P2, #0x00; todos os segmentos desligados
+0081 D2A0             96         setb segmentoA; segmento A desligado
+0083 C2A1             97         clr segmentoB; segmento B desligado
+0085 C2A2             98         clr segmentoC; segmento C desligado
+0087 D2A3             99         setb segmentoD; segmento D ligado
+                     100         ;
+0089 22              101     ret
+                     102     
+                     103     ;interrupcao esterna 0
+008A                 104     External0_ISR:
+008A C231            105         CLR botao; assinala que o botao de sair foi pressionado
+008C D230            106         setb pressionado;assinala que o botao foi pressionado
+008E 32              107     reti
+                     108     
+                     109     ;interrupcao esterna 1
+008F                 110     External1_ISR:
+008F D231            111         setb botao; assinala que o botao fde entrar foi pressionado
+0091 D230            112         setb pressionado;assinala que o botao foi pressionado
+0093 32              113     reti
+                     114     
+                     115     ;Interrupcao timer 0
+0094                 116     Timer0_ISR:
+0094 0532            117         inc conta; incrementa a contagem dos 200us
+0096 0534            118         inc contaBarreira; incrementa a contagem da barreira
+0098 32              119     reti
+                     120     
+----                 121     cseg at 0xA0
+00A0                 122     main:
+00A0 758107          123         mov sp,#7;inicializacao da stack
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/25/2025 01:39:35 PAGE     3
+
+00A3 1150            124         call Init; chama a inicializacao
+00A5                 125     whileTrue:
+00A5 3100            126         call display; chama a funcao display
+00A7 3125            127         call leSensor; chama a funcao leSensor
+00A9 3135            128         call moveBarreira; chama a funcao moveBarreira
+00AB 7464            129         mov a, #fimTempo; coloca o valor de 250 no registo R0
+00AD B532F5          130         cjne a , conta, whileTrue; verifica se a contagem e menor que 250
+00B0 0539            131             inc adjudaContador; incrementa o ajudaContador
+00B2 753200          132             mov conta,#0 ; Limpa o conta
+00B5 AB39            133             mov r3, adjudaContador; coloca o valor do ajudaContador no registo R3
+00B7 BB32EB          134             cjne r3, #50, whileTrue; verifica se o ajudaContador e menor que 50
+00BA 753900          135         mov adjudaContador, #0; ; limpa o ajudaContador
+00BD 753200          136         mov conta, #0 ; limpa o conta
+                     137             ;aqui ja passou 1 segundo
+00C0 203112          138             jb botao, ifPressionado;se o botao estiver on salta para o if
+00C3 D291            139         setb ledVermelho; led vermelho ligado
+00C5 C290            140         clr ledVerde; led verde ligado
+00C7 20A00B          141         jb segmentoA, ifPressionado;se o a estiver on salta para o if
+00CA 20A108          142         jb segmentoB, ifPressionado;se o b estiver on salta para o if
+00CD 20A205          143         jb segmentoC, ifPressionado;se o c estiver on salta para o if
+00D0 20A302          144         jb segmentoD, ifPressionado;se o d estiver on salta para o if
+00D3 8025            145         jmp elseNaoLugares;se nao houver nada ligado salta para o naoLugares
+00D5                 146     ifPressionado:
+00D5 3030CD          147         jnb pressionado, whileTrue; se o botao nao estiver pressionado volta ao inicio
+00D8 0533            148         inc contaSegundo; incrementa a contagem dos segundos
+00DA C290            149         clr ledVerde; led verde ligado
+00DC D291            150         setb ledVermelho; Led vermelho desligado
+00DE B292            151         cpl ledAmarelo; led amarelo intermitente
+00E0 D235            152         setb abreBarreira; abre a barreira
+00E2 A833            153         mov R0, contaSegundo; coloca o valor da contagem no registo R0
+00E4 B80ABE          154         cjne R0, #10, whileTrue; verifica se a contagem e menor que 10
+00E7 753309          155         mov contaSegundo,#9; coloca 10 no R0 para nao dar erros de overflow
+00EA 3036B8          156         jnb passoucarro, whileTrue; verifica se o carro passou
+00ED C235            157         clr abreBarreira; feixa a barreira
+00EF C236            158         clr passoucarro; da reset ao carro
+00F1 C230            159         clr pressionado; da reset ao pressionado
+00F3 753300          160         mov contaSegundo, #0; da reset a contagem dos segundos
+00F6 D292            161         setb ledAmarelo; desliga o led amarelo
+00F8 80AB            162     jmp whileTrue; volta ao inicio do ciclo
+00FA                 163     elseNaoLugares:
+00FA C291            164         clr ledVermelho; led vermelho ligado
+00FC D290            165         setb ledVerde; Led verde desligado
+00FE 80A5            166     jmp whileTrue; volta ao inicio do ciclo
+                     167     
+0100                 168     display:
+0100 7800            169         mov R0, #0x00; inicializa o registo R1
+0102 208001          170         jb L0, segmento2; verifica se esta a 0
+0105 08              171         inc R0; soma o valor do registo R2
+0106                 172     segmento2:
+0106 208101          173         jb L1, segmento3; verifica se esta a 0
+0109 08              174         inc R0; soma o valor do registo R2
+010A                 175     segmento3:
+010A 208201          176         jb L2, segmento4; verifica se esta a 0
+010D 08              177         inc R0; soma o valor do registo R2
+010E                 178     segmento4:
+010E 208301          179         jb L3, segmento5; verifica se esta a 0
+0111 08              180         inc R0; soma o valor do registo R2
+0112                 181     segmento5:
+0112 208401          182         jb L4, segmento6; verifica se esta a 0
+0115 08              183         inc R0; soma o valor do registo R2
+0116                 184     segmento6:
+0116 208501          185         jb L5, segmento7; verifica se esta a 0
+0119 08              186         inc R0; soma o valor do registo R2
+011A                 187     segmento7:
+011A 208601          188         jb L6, segmento8; verifica se esta a 0
+011D 08              189         inc R0; soma o valor do registo R2
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/25/2025 01:39:35 PAGE     4
+
+011E                 190     segmento8:
+011E 208701          191         jb L7, fimDisplay; verifica se esta a 0
+0121 08              192         inc R0; soma o valor do registo R2
+0122                 193     fimDisplay:
+0122 88A0            194         MOV P2, R0; coloca o valor do registo R0 na porta 2
+0124 22              195     ret
+                     196     
+0125                 197     leSensor:
+0125 209402          198         jb sensor, bufferFimSensor; verifica se o sensor esta a 0
+0128 D240            199         setb bufferAbreBarreira; assinala que o carro passou 
+012A                 200     bufferFimSensor:
+012A 304007          201         jnb bufferAbreBarreira, fimSensor; verifica se o carro passou
+012D 309404          202         jnb sensor, fimSensor; verifica se o sensor esta a 0
+0130 D236            203         setb passoucarro; assinala que o carro passou
+0132 C240            204         clr bufferAbreBarreira; limpa o buffer
+0134                 205     fimSensor:
+0134 22              206         ret
+                     207     
+0135                 208     moveBarreira:
+0135 303516          209         jnb abreBarreira, elseBarreira; verifica se a barreira esta a abrir
+0138 753707          210         mov referenciaBarreira, #oitentaBarreira; coloca o valor de 80 na referencia da barreira
+013B E534            211         mov a, contaBarreira; coloca o valor da contagem no registo A
+013D B53702          212         cjne a, referenciaBarreira, continuaMovimento; verifica se a contagem da barreira e men
+                             or que 80
+0140 C293            213         clr barreira; Barreira nao move
+0142                 214     continuaMovimento:
+0142 E534            215         mov a, contaBarreira
+0144 B4641F          216         cjne a, #fimTempoBarreira, fimBarreira; verifica se a contagem da barreira e menor que 
+                             25ms
+0147 753400          217         mov contaBarreira, #0; limpa a contagem da barreira
+014A D293            218         setb barreira; Barreira para cima
+014C 8018            219         jmp fimBarreira; salta para o fim da barreira
+014E                 220     elseBarreira:
+014E 753703          221         mov referenciaBarreira, #zeroBarreira; coloca o valor de 0 na referencia da barreira
+0151 E534            222         mov a, contaBarreira ; coloca o valor da contagem no registo R0
+0153 B53704          223         cjne a, referenciaBarreira, continuaMovimento2; verifica se a contagem da barreira e me
+                             nor que 0
+0156 C293            224         clr barreira; Barreira nao move
+0158 800C            225         jmp fimBarreira; salta para o fim da barreira
+015A                 226     continuaMovimento2:
+015A E534            227         mov a, contaBarreira; coloca o valor da contagem no registo R0
+015C B46407          228         cjne a, #fimTempoBarreira, fimBarreira; verifica se a contagem da barreira e menor que 
+                             25ms
+015F 753400          229         mov contaBarreira, #0; limpa a contagem da barreira
+0162 D293            230         setb barreira; Barreira para baixo
+0164 8000            231         jmp fimBarreira; salta para o fim da barreira
+0166                 232     fimBarreira:
+0166 22              233         ret
+                     234     END
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/25/2025 01:39:35 PAGE     5
 
 SYMBOL TABLE LISTING
 ------ ----- -------
@@ -139,42 +260,80 @@ SYMBOL TABLE LISTING
 
 N A M E             T Y P E  V A L U E   ATTRIBUTES
 
+ABREBARREIRA . . .  N NUMB   0035H   A   
+ADJUDACONTADOR . .  N NUMB   0039H   A   
 BARREIRA . . . . .  B ADDR   0090H.3 A   
-BARRREIRA. . . . .    ----   -----       
-BOTAO. . . . . . .  N NUMB   0020H   A   
-CMP. . . . . . . .    ----   -----       
-CONSTASEGUNDO. . .  N NUMB   0024H   A   
-CONTA. . . . . . .  N NUMB   0022H   A   
-DISPLAY7SEG. . . .  D ADDR   00A0H   A   
+BOTAO. . . . . . .  N NUMB   0031H   A   
+BUFFERABREBARREIRA  N NUMB   0040H   A   
+BUFFERFIMSENSOR. .  C ADDR   012AH   A   
+CONTA. . . . . . .  N NUMB   0032H   A   
+CONTABARREIRA. . .  N NUMB   0034H   A   
+CONTASEGUNDO . . .  N NUMB   0033H   A   
+CONTINUAMOVIMENTO.  C ADDR   0142H   A   
+CONTINUAMOVIMENTO2  C ADDR   015AH   A   
+DISPLAY. . . . . .  C ADDR   0100H   A   
 EA . . . . . . . .  B ADDR   00A8H.7 A   
+ELSEBARREIRA . . .  C ADDR   014EH   A   
+ELSENAOLUGARES . .  C ADDR   00FAH   A   
 ET0. . . . . . . .  B ADDR   00A8H.1 A   
 EX0. . . . . . . .  B ADDR   00A8H.0 A   
 EX1. . . . . . . .  B ADDR   00A8H.2 A   
-EXTERNAL0_ISR. . .  C ADDR   0047H   A   
-EXTERNAL1_ISR. . .  C ADDR   004EH   A   
+EXTERNAL0_ISR. . .  C ADDR   008AH   A   
+EXTERNAL1_ISR. . .  C ADDR   008FH   A   
+FIMBARREIRA. . . .  C ADDR   0166H   A   
+FIMDISPLAY . . . .  C ADDR   0122H   A   
+FIMSENSOR. . . . .  C ADDR   0134H   A   
 FIMTEMPO . . . . .  N NUMB   0064H   A   
-INIT . . . . . . .  C ADDR   000DH   A   
+FIMTEMPOBARREIRA .  N NUMB   0064H   A   
+IFPRESSIONADO. . .  C ADDR   00D5H   A   
+INIT . . . . . . .  C ADDR   0050H   A   
 IT0. . . . . . . .  B ADDR   0088H.0 A   
+L0 . . . . . . . .  B ADDR   0080H.0 A   
+L1 . . . . . . . .  B ADDR   0080H.1 A   
+L2 . . . . . . . .  B ADDR   0080H.2 A   
+L3 . . . . . . . .  B ADDR   0080H.3 A   
+L4 . . . . . . . .  B ADDR   0080H.4 A   
+L5 . . . . . . . .  B ADDR   0080H.5 A   
+L6 . . . . . . . .  B ADDR   0080H.6 A   
+L7 . . . . . . . .  B ADDR   0080H.7 A   
 LEDAMARELO . . . .  B ADDR   0090H.2 A   
-LEDSESTACIONAMENTO  D ADDR   0080H   A   
 LEDVERDE . . . . .  B ADDR   0090H.0 A   
 LEDVERMELHO. . . .  B ADDR   0090H.1 A   
-MAIN . . . . . . .  C ADDR   0050H   A   
+LESENSOR . . . . .  C ADDR   0125H   A   
+MAIN . . . . . . .  C ADDR   00A0H   A   
+MOVEBARREIRA . . .  C ADDR   0135H   A   
+OITENTABARREIRA. .  N NUMB   0007H   A   
 P0 . . . . . . . .  D ADDR   0080H   A   
 P1 . . . . . . . .  D ADDR   0090H   A   
 P2 . . . . . . . .  D ADDR   00A0H   A   
-PASSOUCARRO. . . .  N NUMB   0026H   A   
-PRESSIONADO. . . .  N NUMB   001EH   A   
+PASSOUCARRO. . . .  N NUMB   0036H   A   
+PRESSIONADO. . . .  N NUMB   0030H   A   
+REFERENCIABARREIRA  N NUMB   0037H   A   
+SEGMENTO2. . . . .  C ADDR   0106H   A   
+SEGMENTO3. . . . .  C ADDR   010AH   A   
+SEGMENTO4. . . . .  C ADDR   010EH   A   
+SEGMENTO5. . . . .  C ADDR   0112H   A   
+SEGMENTO6. . . . .  C ADDR   0116H   A   
+SEGMENTO7. . . . .  C ADDR   011AH   A   
+SEGMENTO8. . . . .  C ADDR   011EH   A   
+SEGMENTOA. . . . .  B ADDR   00A0H.0 A   
+SEGMENTOB. . . . .  B ADDR   00A0H.1 A   
+SEGMENTOC. . . . .  B ADDR   00A0H.2 A   
+SEGMENTOD. . . . .  B ADDR   00A0H.3 A   
+A51 MACRO ASSEMBLER  PROJETOEMASM                                                         05/25/2025 01:39:35 PAGE     6
+
 SENSOR . . . . . .  B ADDR   0090H.4 A   
 SP . . . . . . . .  D ADDR   0081H   A   
 TH0. . . . . . . .  D ADDR   008CH   A   
-TIMER0_ISR . . . .  C ADDR   0055H   A   
+TIMER0_ISR . . . .  C ADDR   0094H   A   
 TL0. . . . . . . .  D ADDR   008AH   A   
 TMOD . . . . . . .  D ADDR   0089H   A   
 TR0. . . . . . . .  B ADDR   0088H.4 A   
+WHILETRUE. . . . .  C ADDR   00A5H   A   
+ZEROBARREIRA . . .  N NUMB   0003H   A   
 
 
 REGISTER BANK(S) USED: 0 
 
 
-ASSEMBLY COMPLETE.  0 WARNING(S), 7 ERROR(S)
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)

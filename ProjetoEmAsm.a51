@@ -28,17 +28,16 @@ segmentoC EQU P2.2;
 segmentoD EQU P2.3;
 
 ;variaveis globais
-pressionado         EQU 0x30;
-botao               EQU 0x31;
-conta               EQU 0x32;
-contaSegundo        EQU 0x33;
-contaBarreira       EQU 0x34;
-abreBarreira        EQU 0x35;
-passoucarro         EQU 0x36;
-referenciaBarreira  EQU 0x37;
-testebitor			EQU 0x38;
-adjudaContador		EQU 0x39;
-bufferAbreBarreira	EQU 0x40;
+pressionado         EQU 0x30;assinala que o botao foi pressionado
+botao               EQU 0x31;assinala que o botao foi pressionado
+conta               EQU 0x32;conta o tempo em 200us
+contaSegundo        EQU 0x33;conta o tempo em segundos
+contaBarreira       EQU 0x34;conta o tempo da barreira em 200us
+abreBarreira        EQU 0x35;assinala que a barreira esta a abrir
+passoucarro         EQU 0x36;assinala que o carro passou
+referenciaBarreira  EQU 0x37;assinala a referencia da barreira
+adjudaContador		EQU 0x39;assinala a ajuda do contador
+bufferAbreBarreira	EQU 0x40;assinala que o carro passou e a barreira deve abrir
 
 ;inicio
 cseg at 0
@@ -128,13 +127,13 @@ whileTrue:
     call leSensor; chama a funcao leSensor
     call moveBarreira; chama a funcao moveBarreira
     mov a, #fimTempo; coloca o valor de 250 no registo R0
-    cjne a , conta, whileTrue;
-	inc adjudaContador	
-	mov conta,#0
-	mov r3, adjudaContador
-	cjne r3, #50, whileTrue
-    mov adjudaContador, #0
-    mov conta, #0
+    cjne a , conta, whileTrue; verifica se a contagem e menor que 250
+	inc adjudaContador; incrementa o ajudaContador
+	mov conta,#0 ; Limpa o conta
+	mov r3, adjudaContador; coloca o valor do ajudaContador no registo R3
+	cjne r3, #50, whileTrue; verifica se o ajudaContador e menor que 50
+    mov adjudaContador, #0; ; limpa o ajudaContador
+    mov conta, #0 ; limpa o conta
 	;aqui ja passou 1 segundo
 	jb botao, ifPressionado;se o botao estiver on salta para o if
     setb ledVermelho; led vermelho ligado

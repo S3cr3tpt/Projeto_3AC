@@ -3,8 +3,8 @@
 //constantes
 #define fimTempo 5000  // 5000 *0.20ms = 1s
 #define fimTempoBarreira 100// 50 * 0.20ms = 20ms
-#define zero 3 // 
-#define oitenta 6 // 8 * 0.20ms = 1.6ms
+#define zero 3 // 3 * 0.20ms = 0.6ms 
+#define oitenta 6 //  6 * 0.20ms = 1.2ms
 
 //Pins P0
 sbit L0 = P0^0;
@@ -53,8 +53,8 @@ void Init(void){
 
     //configuracao Timer 0
     TR0 = 1; //inicia o timer 0
-    TH0 = 56;
-    TL0 = 56;
+    TH0 = 56; //Inicia para ser 256 -56 = 200ms
+    TL0 = 56; //Inicia para ser 256 -56 = 200ms
     IT0 = 1;//interrupcao esterna ativa a falling edge
 
     //inicializacao do P0
@@ -66,7 +66,7 @@ void Init(void){
     ledVerde = 0; //led verde ligado
     ledVermelho = 1; //led vermelho desligado
     ledAmarelo = 1; //led amarelo desligado
-	barreira = 0;//a barreira comeca para baixo
+	barreira = 1;//a barreira comeca para baixo
 	//sensor = 1;//inicializa o sensor a 1
     
 
@@ -105,11 +105,11 @@ void display(void){
 
 void leSensor(){
     if (sensor == 0){
-        bufferPassouCarro = 1;
+        bufferPassouCarro = 1; //se o sensor estiver a 0 entao o carro passou
     }
     if (bufferPassouCarro == 1 && sensor == 1){
-            passouCarro = 1;
-            bufferPassouCarro = 0;
+            passouCarro = 1; //se o sensor estiver a 1 entao o carro passou todo
+            bufferPassouCarro = 0; //reseta o buffer
     }
 }
 
@@ -145,34 +145,34 @@ void main(void){
         display();
         leSensor();
         moveBarreira();
-        if (conta == fimTempo){
-              conta = 0; //volta a contar
-            if (segmentoA || segmentoB || segmentoC || segmentoD){  
+		if (segmentoA || segmentoB || segmentoC || segmentoD){  
                 ledVerde = 0; //ativa o led verde
                 ledVermelho = 1; //desliga o led vermelho  
-                if (segmentoA || segmentoB || segmentoC || segmentoD || botao){    
-                    if (pressionado){ //se tiver lugares ou se for para sair
-                        contaSegundo ++; //passou 1 segundo
-                        ledVerde = 0; //ativa o verde
-                        ledVermelho = 1; //desliga o vermelho
-                        ledAmarelo = ~ledAmarelo; //amarelo intermitente
-                        abreBarreira = 1;//levanta a barreira
-                        if (contaSegundo >= 10){//espera ate ser maior que 10 segundos 
-                            if (passouCarro){
-                                abreBarreira = 0; //baixa a barreira 
-                                passouCarro = 0; //reseta o carro
-                                pressionado = 0; //volta a colocar o botao de passou a 0
-                                contaSegundo = 0; //reseta o timer		
-                                //sensor = 1; //reseta o sensor	
-                                ledAmarelo = 1; //desliga o led amareleo							
-                            }
+		} else{
+                ledVermelho = 0;//ativa o led vermelho
+                ledVerde = 1; //desliga o led verde
+                }
+        if (conta == fimTempo){
+            conta = 0; //volta a contar
+            if (segmentoA || segmentoB || segmentoC || segmentoD || botao){    
+                if (pressionado){ //se tiver lugares ou se for para sair
+                    contaSegundo ++; //passou 1 segundo
+                    ledVerde = 0; //ativa o verde
+                    ledVermelho = 1; //desliga o vermelho
+                    ledAmarelo = ~ledAmarelo; //amarelo intermitente
+                    abreBarreira = 1;//levanta a barreira
+                    if (contaSegundo >= 10){//espera ate ser maior que 10 segundos 
+                        if (passouCarro){
+                            abreBarreira = 0; //baixa a barreira 
+                            passouCarro = 0; //reseta o carro
+                            pressionado = 0; //volta a colocar o botao de passou a 0
+                            contaSegundo = 0; //reseta o timer		
+                            //sensor = 1; //reseta o sensor	
+                            ledAmarelo = 1; //desliga o led amareleo							
                         }
                     }
                 }
-            }else{
-                    ledVermelho = 0;//ativa o led vermelho
-                    ledVerde = 1; //desliga o led verde
-                }
+            }
         }
     }
 }
